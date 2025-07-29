@@ -1,0 +1,116 @@
+{% load static %}
+
+<div class="sidebar-sticky pt-3">
+    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+        <span>Menu Principal</span>
+    </h6>
+    
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'core:dashboard' %}">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </li>
+        
+        {% if 'Tecnicos' in user.groups.all|join:', ' %}
+            <!-- Menu Técnico -->
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-database"></i> Conexões
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-folder"></i> Gerenciar Pastas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-file-alt"></i> Gerenciar Relatórios
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-users"></i> Usuários
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+
+    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+        <span>Relatórios</span>
+        {% if 'Tecnicos' in user.groups.all|join:', ' %}
+            <a class="d-flex align-items-center text-muted" href="#">
+                <i class="fas fa-plus"></i>
+            </a>
+        {% endif %}
+    </h6>
+    
+    <!-- Estrutura de Pastas de Relatórios -->
+    <div id="report-folders">
+        <ul class="nav flex-column">
+            <!-- Aqui serão carregadas as pastas dinamicamente via JavaScript -->
+            <li class="nav-item">
+                <a class="nav-link text-muted" href="#">
+                    <i class="fas fa-folder"></i> Carregando pastas...
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Campo de Pesquisa -->
+    <div class="px-3 mt-4">
+        <form class="form-inline" method="GET">
+            <div class="input-group input-group-sm w-100">
+                <input type="text" class="form-control" name="search" placeholder="Buscar relatórios..." 
+                       value="{{ request.GET.search }}">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    position: fixed;
+    top: 56px; /* Altura da navbar */
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    height: calc(100vh - 56px);
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.sidebar .nav-link {
+    color: #333;
+    padding: .75rem 1rem;
+}
+
+.sidebar .nav-link:hover {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, .1);
+}
+
+.sidebar .nav-link.active {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, .1);
+}
+
+.sidebar-heading {
+    font-size: .75rem;
+    text-transform: uppercase;
+}
+</style>

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bem-vindo - ForgeReports{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <!-- Logo e Título -->
+            <div class="mb-5">
+                <h1 class="display-4 font-weight-bold text-primary mb-3">
+                    <i class="fas fa-chart-bar mr-3"></i>ForgeReports
+                </h1>
+                <p class="lead text-muted">
+                    Portal de visualização dinâmica e segura de relatórios SQL
+                </p>
+                <p class="text-muted">
+                    Desenvolvido pela <strong>CodeForge Systems</strong>
+                </p>
+            </div>
+
+            <!-- Cards de Recursos -->
+            <div class="row mb-5">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-database fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Conexões Seguras</h5>
+                            <p class="card-text text-muted">
+                                Conecte-se com segurança a bancos SQL Server, PostgreSQL, MySQL e Oracle
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-folder-tree fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">Organização Hierárquica</h5>
+                            <p class="card-text text-muted">
+                                Sistema de pastas intuitivo para organizar seus relatórios de forma eficiente
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-filter fa-3x text-warning mb-3"></i>
+                            <h5 class="card-title">Filtros Dinâmicos</h5>
+                            <p class="card-text text-muted">
+                                Aplique filtros personalizados com campos de texto, seleção e datas
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botão de Login -->
+            <div class="mb-5">
+                <a href="/admin/login/" class="btn btn-primary btn-lg px-5 py-3">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Fazer Login
+                </a>
+            </div>
+
+            <!-- Informações de Status -->
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title text-success">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        Sistema Operacional - Fase 1
+                    </h5>
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="p-2">
+                                <i class="fas fa-cogs text-primary"></i>
+                                <small class="d-block text-muted">Backend Django</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-2">
+                                <i class="fas fa-database text-success"></i>
+                                <small class="d-block text-muted">SQLite Database</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-2">
+                                <i class="fas fa-paint-brush text-warning"></i>
+                                <small class="d-block text-muted">Bootstrap UI</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-2">
+                                <i class="fas fa-users text-info"></i>
+                                <small class="d-block text-muted">Perfis de Acesso</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nota de Desenvolvimento -->
+            <div class="mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Versão de desenvolvimento - Fase 1 implementada
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Recursos Técnicos -->
+<div class="bg-light py-5 mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6">
+                <h3 class="mb-4">Recursos Implementados</h3>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success mr-2"></i>
+                        Sistema de autenticação baseado em grupos
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success mr-2"></i>
+                        Dashboard adaptativo (Técnico vs Usuário)
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success mr-2"></i>
+                        Models para conexões e relatórios
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success mr-2"></i>
+                        Interface administrativa completa
+                    </li>
+                </ul>
+            </div>
+            <div class="col-lg-6">
+                <h3 class="mb-4">Próximas Funcionalidades</h3>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-warning mr-2"></i>
+                        Execução de queries SQL
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-warning mr-2"></i>
+                        Sistema de filtros dinâmicos
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-warning mr-2"></i>
+                        Exportação para Excel
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-warning mr-2"></i>
+                        Navegação hierárquica de pastas
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.display-4 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+</style>
+{% endblock %}
