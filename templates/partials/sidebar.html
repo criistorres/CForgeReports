@@ -1,116 +1,94 @@
+<!-- templates/partials/sidebar_clean.html - PRIMEIRA LINHA: Sidebar limpa sem padding excessivo -->
 {% load static %}
 
-<div class="sidebar-sticky pt-3">
-    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-        <span>Menu Principal</span>
-    </h6>
+<div class="h-full flex flex-col">
+    <!-- Header compacto -->
+    <div class="p-3 border-b border-slate-700">
+        <div class="flex items-center space-x-2">
+            <div class="w-6 h-6 bg-gradient-to-br from-purple-500 to-green-400 rounded-lg flex items-center justify-center">
+                <i class="fas fa-chart-bar text-white text-xs"></i>
+            </div>
+            <div>
+                <h3 class="text-white font-semibold text-xs">Menu</h3>
+                <p class="text-slate-400 text-xs">{{ user.username }}</p>
+            </div>
+        </div>
+    </div>
     
-    <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'core:dashboard' %}">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-        </li>
+    <!-- Navegação -->
+    <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
+        <!-- Dashboard -->
+        <a href="{% url 'core:dashboard' %}" 
+           class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <div class="flex items-center space-x-2 p-2 rounded-lg hover:bg-purple-500/10 transition-colors">
+                <i class="fas fa-tachometer-alt text-purple-400 w-4"></i>
+                <span class="text-sm font-medium">Dashboard</span>
+            </div>
+        </a>
         
         {% if 'Tecnicos' in user.groups.all|join:', ' %}
-            <!-- Menu Técnico -->
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-database"></i> Conexões
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-folder"></i> Gerenciar Pastas
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-file-alt"></i> Gerenciar Relatórios
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-users"></i> Usuários
-                </a>
-            </li>
-        {% endif %}
-    </ul>
-
-    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-        <span>Relatórios</span>
-        {% if 'Tecnicos' in user.groups.all|join:', ' %}
-            <a class="d-flex align-items-center text-muted" href="#">
-                <i class="fas fa-plus"></i>
+            <!-- Conexões -->
+            <a href="{% url 'connections:list' %}" 
+               class="sidebar-link {% if 'connections' in request.resolver_match.namespace %}active{% endif %}">
+                <div class="flex items-center space-x-2 p-2 rounded-lg hover:bg-green-500/10 transition-colors">
+                    <i class="fas fa-database text-green-400 w-4"></i>
+                    <span class="text-sm font-medium">Conexões</span>
+                    {% if connections_count %}
+                        <span class="tag-forge primary text-xs ml-auto">{{ connections_count }}</span>
+                    {% endif %}
+                </div>
+            </a>
+            
+            <!-- Relatórios -->
+            <a href="#" class="sidebar-link">
+                <div class="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-500/10 transition-colors">
+                    <i class="fas fa-file-alt text-blue-400 w-4"></i>
+                    <span class="text-sm font-medium">Relatórios</span>
+                </div>
             </a>
         {% endif %}
-    </h6>
-    
-    <!-- Estrutura de Pastas de Relatórios -->
-    <div id="report-folders">
-        <ul class="nav flex-column">
-            <!-- Aqui serão carregadas as pastas dinamicamente via JavaScript -->
-            <li class="nav-item">
-                <a class="nav-link text-muted" href="#">
-                    <i class="fas fa-folder"></i> Carregando pastas...
-                </a>
-            </li>
-        </ul>
-    </div>
 
-    <!-- Campo de Pesquisa -->
-    <div class="px-3 mt-4">
-        <form class="form-inline" method="GET">
-            <div class="input-group input-group-sm w-100">
-                <input type="text" class="form-control" name="search" placeholder="Buscar relatórios..." 
-                       value="{{ request.GET.search }}">
-                <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" type="submit">
-                        <i class="fas fa-search"></i>
-                    </button>
+        <!-- Seção Relatórios do Usuário -->
+        <div class="pt-2">
+            <div class="px-2 py-1">
+                <h4 class="text-xs font-semibold text-slate-500 uppercase">Seus Relatórios</h4>
+            </div>
+            
+            <!-- Search compacto -->
+            <div class="px-2 py-1">
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Buscar..."
+                           class="w-full text-xs py-1 px-2 pl-6 bg-slate-800/50 border border-slate-600 rounded-lg focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 text-white placeholder-slate-400">
+                    <i class="fas fa-search absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs"></i>
                 </div>
             </div>
-        </form>
+            
+            <!-- Lista de relatórios -->
+            <div class="px-2 space-y-1">
+                <div class="flex items-center space-x-2 p-1 hover:bg-slate-800/30 rounded text-xs">
+                    <i class="fas fa-file-alt text-purple-400"></i>
+                    <span class="text-slate-300">Vendas Mensais</span>
+                </div>
+                <div class="flex items-center space-x-2 p-1 hover:bg-slate-800/30 rounded text-xs">
+                    <i class="fas fa-file-alt text-purple-400"></i>
+                    <span class="text-slate-300">Estoque Atual</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Footer compacto -->
+    <div class="p-2 border-t border-slate-700">
+        <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-500">Status</span>
+            <div class="flex items-center space-x-1">
+                <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span class="text-green-400">Online</span>
+            </div>
+        </div>
+        <div class="text-center mt-1">
+            <span class="text-xs text-slate-600">ForgeReports v2.0</span>
+        </div>
     </div>
 </div>
-
-<style>
-.sidebar {
-    position: fixed;
-    top: 56px; /* Altura da navbar */
-    bottom: 0;
-    left: 0;
-    z-index: 100;
-    padding: 0;
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-}
-
-.sidebar-sticky {
-    position: relative;
-    top: 0;
-    height: calc(100vh - 56px);
-    padding-top: .5rem;
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-
-.sidebar .nav-link {
-    color: #333;
-    padding: .75rem 1rem;
-}
-
-.sidebar .nav-link:hover {
-    color: #007bff;
-    background-color: rgba(0, 123, 255, .1);
-}
-
-.sidebar .nav-link.active {
-    color: #007bff;
-    background-color: rgba(0, 123, 255, .1);
-}
-
-.sidebar-heading {
-    font-size: .75rem;
-    text-transform: uppercase;
-}
-</style>

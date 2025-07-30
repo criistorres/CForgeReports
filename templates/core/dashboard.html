@@ -1,314 +1,337 @@
+<!-- templates/core/dashboard_compact.html - PRIMEIRA LINHA: Dashboard compacto sem espaços excessivos -->
 {% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Dashboard - ForgeReports{% endblock %}
 
 {% block content %}
-<div class="py-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-        <h1 class="h2">
+<!-- Header compacto -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-white mb-1">
             Dashboard
             {% if is_tecnico %}
-                <small class="text-muted">(Modo Técnico)</small>
+                <span class="tag-forge primary text-xs ml-2">Técnico</span>
             {% else %}
-                <small class="text-muted">(Modo Usuário)</small>
+                <span class="tag-forge success text-xs ml-2">Usuário</span>
             {% endif %}
         </h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <div class="btn-group mr-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-download"></i> Exportar
-                </button>
+        <p class="text-slate-400 text-sm">
+            {% if is_tecnico %}
+                Acesso completo ao sistema de relatórios
+            {% else %}
+                Visualização e execução de relatórios
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- Actions compactas -->
+    <div class="flex items-center space-x-3 mt-3 lg:mt-0">
+        {% if is_tecnico %}
+            <a href="{% url 'connections:create' %}" class="btn-forge-primary text-sm px-4 py-2">
+                <i class="fas fa-plus mr-1"></i>Nova Conexão
+            </a>
+        {% endif %}
+        <button class="btn-forge-glass text-sm px-4 py-2" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt mr-1"></i>Atualizar
+        </button>
+    </div>
+</div>
+
+{% if is_tecnico %}
+    <!-- Stats Cards compactas -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Conexões -->
+        <div class="dashboard-card primary p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium uppercase">Conexões</p>
+                    <p class="text-2xl font-bold text-purple-400">{{ total_connections|default:0 }}</p>
+                </div>
+                <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-database text-purple-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relatórios -->
+        <div class="dashboard-card success p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium uppercase">Relatórios</p>
+                    <p class="text-2xl font-bold text-green-400">{{ total_reports|default:0 }}</p>
+                </div>
+                <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-file-alt text-green-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pastas -->
+        <div class="dashboard-card info p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium uppercase">Pastas</p>
+                    <p class="text-2xl font-bold text-blue-400">{{ total_folders|default:0 }}</p>
+                </div>
+                <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-folder text-blue-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuários -->
+        <div class="dashboard-card warning p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium uppercase">Usuários</p>
+                    <p class="text-2xl font-bold text-yellow-400">{{ total_users|default:0 }}</p>
+                </div>
+                <div class="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-yellow-400"></i>
+                </div>
             </div>
         </div>
     </div>
 
-    {% if is_tecnico %}
-        <!-- Dashboard Técnico -->
-        <div class="row mb-4">
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="dashboard-card">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Conexões Ativas</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ total_connections }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-database fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
+    <!-- Content em duas colunas -->
+    <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Relatórios Recentes -->
+        <div class="card-forge p-5">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-white">
+                    <i class="fas fa-file-alt mr-2 text-blue-400"></i>
+                    Relatórios Recentes
+                </h3>
+                <a href="#" class="text-blue-400 hover:text-blue-300 text-sm">
+                    Ver todos <i class="fas fa-arrow-right ml-1"></i>
+                </a>
             </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="dashboard-card">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Relatórios Ativos</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ total_reports }}</div>
+            
+            {% if recent_reports %}
+                <div class="space-y-3">
+                    {% for report in recent_reports|slice:":5" %}
+                    <div class="flex items-center space-x-3 p-2 hover:bg-slate-800/30 rounded-lg transition-colors">
+                        <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-alt text-blue-400 text-sm"></i>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-file-alt fa-2x"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-medium text-sm truncate">{{ report.nome }}</p>
+                            <p class="text-slate-400 text-xs">
+                                {% if report.pasta %}{{ report.pasta.nome }}{% else %}Raiz{% endif %} • 
+                                {{ report.criado_em|date:"d/m" }}
+                            </p>
                         </div>
+                        <button class="action-btn edit opacity-0 group-hover:opacity-100">
+                            <i class="fas fa-edit text-xs"></i>
+                        </button>
                     </div>
+                    {% endfor %}
                 </div>
+            {% else %}
+                <div class="text-center py-6">
+                    <i class="fas fa-file-alt text-3xl text-slate-600 mb-3"></i>
+                    <p class="text-slate-400 text-sm">Nenhum relatório criado</p>
+                    <button class="btn-forge-primary text-sm px-4 py-2 mt-3">
+                        <i class="fas fa-plus mr-1"></i>Criar Primeiro
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Conexões Ativas -->
+        <div class="card-forge p-5">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-white">
+                    <i class="fas fa-database mr-2 text-green-400"></i>
+                    Conexões Ativas
+                </h3>
+                <a href="{% url 'connections:list' %}" class="text-green-400 hover:text-green-300 text-sm">
+                    Gerenciar <i class="fas fa-arrow-right ml-1"></i>
+                </a>
             </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="dashboard-card">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Pastas</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ total_folders }}</div>
+            
+            {% if connections %}
+                <div class="space-y-3">
+                    {% for connection in connections|slice:":5" %}
+                    <div class="flex items-center space-x-3 p-2 hover:bg-slate-800/30 rounded-lg transition-colors">
+                        <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-database text-green-400 text-sm"></i>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-folder fa-2x"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-medium text-sm truncate">{{ connection.nome }}</p>
+                            <p class="text-slate-400 text-xs">
+                                {{ connection.get_tipo_banco_display }} • 
+                                <span class="connection-status active">Online</span>
+                            </p>
                         </div>
+                        <button class="action-btn test opacity-0 group-hover:opacity-100" onclick="testConnection({{ connection.id }})">
+                            <i class="fas fa-plug text-xs"></i>
+                        </button>
                     </div>
+                    {% endfor %}
                 </div>
-            </div>
+            {% else %}
+                <div class="text-center py-6">
+                    <i class="fas fa-database text-3xl text-slate-600 mb-3"></i>
+                    <p class="text-slate-400 text-sm">Nenhuma conexão configurada</p>
+                    <a href="{% url 'connections:create' %}" class="btn-forge-primary text-sm px-4 py-2 mt-3">
+                        <i class="fas fa-plus mr-1"></i>Adicionar
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="dashboard-card">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Usuários</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ total_users|default:0 }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
+{% else %}
+    <!-- Dashboard Usuário compacto -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="dashboard-card primary p-4">
+            <div class="text-center">
+                <p class="text-xs text-slate-400 font-medium uppercase mb-1">Disponíveis</p>
+                <p class="text-2xl font-bold text-purple-400">{{ available_reports|default:0 }}</p>
+                <p class="text-xs text-slate-500">Relatórios</p>
             </div>
         </div>
 
-        <!-- Cards para Técnicos -->
-        <div class="row">
-            <div class="col-xl-8 col-lg-7">
-                <!-- Relatórios Recentes -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold">Relatórios Recentes</h6>
-                    </div>
-                    <div class="card-body">
-                        {% if recent_reports %}
-                            <div class="table-responsive">
-                                <table class="table table-borderless">
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>Pasta</th>
-                                            <th>Conexão</th>
-                                            <th>Criado em</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for report in recent_reports %}
-                                        <tr>
-                                            <td>
-                                                <i class="fas fa-file-alt text-info mr-2"></i>
-                                                {{ report.nome }}
-                                            </td>
-                                            <td>
-                                                {% if report.pasta %}
-                                                    <small class="text-muted">{{ report.pasta.nome }}</small>
-                                                {% else %}
-                                                    <small class="text-muted">Raiz</small>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">{{ report.conexao_banco.nome }}</small>
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">{{ report.criado_em|date:"d/m/Y H:i" }}</small>
-                                            </td>
-                                            <td>
-                                                <a href="#" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="#" class="btn btn-sm btn-outline-secondary">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">Nenhum relatório criado ainda.</p>
-                                <a href="#" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Criar Primeiro Relatório
-                                </a>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4 col-lg-5">
-                <!-- Conexões Ativas -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold">Conexões Ativas</h6>
-                    </div>
-                    <div class="card-body">
-                        {% if connections %}
-                            {% for connection in connections %}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="mr-3">
-                                        <i class="fas fa-database text-success"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="font-weight-bold">{{ connection.nome }}</div>
-                                        <small class="text-muted">{{ connection.get_tipo_banco_display }}</small>
-                                    </div>
-                                    <div>
-                                        <span class="badge badge-success">Ativa</span>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-database fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">Nenhuma conexão configurada.</p>
-                                <a href="#" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-plus"></i> Adicionar Conexão
-                                </a>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+        <div class="dashboard-card success p-4">
+            <div class="text-center">
+                <p class="text-xs text-slate-400 font-medium uppercase mb-1">Com Acesso</p>
+                <p class="text-2xl font-bold text-green-400">{{ folders_with_reports.count|default:0 }}</p>
+                <p class="text-xs text-slate-500">Pastas</p>
             </div>
         </div>
 
-    {% else %}
-        <!-- Dashboard Usuário -->
-        <div class="row mb-4">
-            <div class="col-xl-4 col-md-6 mb-4">
-                <div class="dashboard-card">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Relatórios Disponíveis</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ available_reports }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-file-alt fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4 col-md-6 mb-4">
-                <div class="dashboard-card">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Pastas com Acesso</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ folders_with_reports.count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-folder fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4 col-md-6 mb-4">
-                <div class="dashboard-card">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Últimas Visualizações</div>
-                            <div class="h5 mb-0 font-weight-bold">0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-eye fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
+        <div class="dashboard-card info p-4">
+            <div class="text-center">
+                <p class="text-xs text-slate-400 font-medium uppercase mb-1">Execuções</p>
+                <p class="text-2xl font-bold text-blue-400">0</p>
+                <p class="text-xs text-slate-500">Este mês</p>
             </div>
         </div>
+    </div>
 
-        <!-- Relatórios para Usuários -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold">Seus Relatórios</h6>
-                    </div>
-                    <div class="card-body">
-                        {% if recent_reports %}
-                            <div class="table-responsive">
-                                <table class="table table-borderless">
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>Descrição</th>
-                                            <th>Pasta</th>
-                                            <th>Última Atualização</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for report in recent_reports %}
-                                        <tr>
-                                            <td>
-                                                <i class="fas fa-file-alt text-info mr-2"></i>
-                                                {{ report.nome }}
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">{{ report.descricao|truncatewords:10 }}</small>
-                                            </td>
-                                            <td>
-                                                {% if report.pasta %}
-                                                    <small class="text-muted">{{ report.pasta.nome }}</small>
-                                                {% else %}
-                                                    <small class="text-muted">Raiz</small>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">{{ report.atualizado_em|date:"d/m/Y H:i" }}</small>
-                                            </td>
-                                            <td>
-                                                <a href="#" class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-play"></i> Executar
-                                                </a>
-                                                <a href="#" class="btn btn-sm btn-outline-success">
-                                                    <i class="fas fa-download"></i> Excel
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">Você ainda não tem acesso a nenhum relatório.</p>
-                                <p class="text-muted">Entre em contato com o administrador para solicitar acesso.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+    <!-- Seus Relatórios -->
+    <div class="card-forge p-5">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">
+                <i class="fas fa-chart-bar mr-2 text-purple-400"></i>
+                Seus Relatórios
+            </h3>
+            <div class="search-forge max-w-xs">
+                <input type="text" placeholder="Buscar..." class="text-sm py-2">
+                <i class="fas fa-search search-icon"></i>
             </div>
         </div>
-    {% endif %}
+        
+        {% if recent_reports %}
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for report in recent_reports %}
+                <div class="card-forge-light p-4 hover-lift cursor-pointer" onclick="executeReport({{ report.id }})">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chart-line text-white"></i>
+                        </div>
+                        <div class="tag-forge primary text-xs">
+                            {% if report.pasta %}{{ report.pasta.nome }}{% else %}Raiz{% endif %}
+                        </div>
+                    </div>
+                    <h4 class="text-base font-semibold text-slate-900 mb-2">{{ report.nome }}</h4>
+                    <p class="text-slate-600 text-xs mb-3">{{ report.descricao|truncatewords:10 }}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-500">{{ report.atualizado_em|timesince }} atrás</span>
+                        <div class="flex space-x-1">
+                            <button class="action-btn view">
+                                <i class="fas fa-play text-xs"></i>
+                            </button>
+                            <button class="action-btn edit">
+                                <i class="fas fa-download text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-8">
+                <i class="fas fa-chart-bar text-4xl text-slate-600 mb-4"></i>
+                <p class="text-slate-400 mb-2">Nenhum relatório disponível</p>
+                <p class="text-slate-500 text-sm">Entre em contato com o administrador para solicitar acesso</p>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
+<!-- Modal para Teste de Conexão -->
+<div id="testConnectionModal" class="modal-forge hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-lg font-semibold text-white">
+                <i class="fas fa-plug mr-2"></i>Teste de Conexão
+            </h3>
+            <button onclick="closeTestModal()" class="text-slate-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="testResult"></div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeTestModal()" class="btn-forge-secondary text-sm px-4 py-2">Fechar</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Adicionar funcionalidades específicas do dashboard
-    document.addEventListener('DOMContentLoaded', function() {
-        // Atualizar estatísticas a cada 30 segundos (em produção, usar WebSocket ou polling)
-        // setInterval(updateDashboardStats, 30000);
-        
-        console.log('Dashboard carregado - Modo:', '{{ is_tecnico|yesno:"Técnico,Usuário" }}');
+function refreshDashboard() {
+    window.location.reload();
+}
+
+function testConnection(connectionId) {
+    const modal = document.getElementById('testConnectionModal');
+    const resultDiv = document.getElementById('testResult');
+    
+    modal.classList.remove('hidden');
+    resultDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Testando...</div>';
+    
+    fetch(`/connections/${connectionId}/test/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': window.csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertType = data.success ? 'success' : 'error';
+        const icon = data.success ? 'fa-check-circle' : 'fa-times-circle';
+        resultDiv.innerHTML = `
+            <div class="alert-forge ${alertType}">
+                <i class="fas ${icon}"></i>
+                <span>${data.message}</span>
+            </div>
+        `;
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="alert-forge error">
+                <i class="fas fa-times-circle"></i>
+                <span>Erro de conexão</span>
+            </div>
+        `;
     });
+}
+
+function closeTestModal() {
+    document.getElementById('testConnectionModal').classList.add('hidden');
+}
+
+function executeReport(reportId) {
+    console.log('Executando relatório:', reportId);
+}
 </script>
 {% endblock %}

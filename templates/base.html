@@ -1,110 +1,188 @@
+<!-- templates/base_clean.html - PRIMEIRA LINHA: Template base limpo sem espaçamentos excessivos -->
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}ForgeReports{% endblock %}</title>
     
-    {% load bootstrap4 %}
     {% load static %}
     
-    <!-- Bootstrap CSS -->
-    {% bootstrap_css %}
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forge-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forge-components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forge-animations.css' %}">
     
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'core:home' %}">
-                <strong>ForgeReports</strong>
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
-                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {{ user.get_full_name|default:user.username }}
-                                {% if user.groups.all %}
-                                    <small class="text-muted">({{ user.groups.first.name }})</small>
-                                {% endif %}
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby="userDropdown">
-                                {% if 'Tecnicos' in user.groups.all|join:', ' %}
-                                    <a class="dropdown-item" href="#" id="toggleViewMode" 
-                                       data-url="{% url 'core:toggle_view_mode' %}">
-                                        <i class="fas fa-eye"></i> Ver como Usuário
-                                    </a>
-                                    <div class="dropdown-divider"></div>
-                                {% endif %}
-                                <a class="dropdown-item" href="{% url 'core:logout' %}">
-                                    <i class="fas fa-sign-out-alt"></i> Sair
-                                </a>
-                            </div>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'core:login' %}">Login</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            {% if user.is_authenticated %}
-                <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-                    {% include 'partials/sidebar.html' %}
-                </nav>
-            {% endif %}
-            
-            <!-- Page Content -->
-            <main class="{% if user.is_authenticated %}col-md-9 ml-sm-auto col-lg-10{% else %}col-12{% endif %} px-md-4">
-                {% if messages %}
-                    <div class="mt-3">
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                {% block content %}{% endblock %}
-            </main>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    {% bootstrap_javascript jquery='full' %}
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Font Awesome -->
-    <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- CSRF Token para JavaScript -->
+    {% block extra_css %}{% endblock %}
+
+    <style>
+        /* Garantir que não há espaços desnecessários */
+        body { margin: 0; padding: 0; }
+        .navbar-height { height: 60px; }
+        .content-top { padding-top: 60px; }
+        .sidebar-top { top: 60px; height: calc(100vh - 60px); }
+    </style>
+</head>
+<body class="bg-slate-900 text-white">
+    
+    <!-- Background Gradients (fixos) -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute inset-0 liquid-gradient opacity-20"></div>
+        <div class="absolute inset-0 liquid-gradient-alt opacity-10"></div>
+    </div>
+    
+    <!-- Navbar fixa -->
+    <header class="fixed top-0 w-full z-50 navbar-transparent transition-all duration-500 navbar-height" id="main-navbar">
+        <nav class="container mx-auto px-6 h-full flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 group cursor-pointer" onclick="window.location.href='{% url "core:home" %}'">
+                <div class="relative">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 via-purple-600 to-green-400 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-purple-500/25 transition-all duration-300 group-hover:scale-105">
+                        <i class="fas fa-chart-bar text-slate-900 text-lg"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-lg font-bold text-white leading-tight">ForgeReports</span>
+                    <span class="text-xs text-white/70 font-medium tracking-wider uppercase">Analytics Portal</span>
+                </div>
+            </div>
+            
+            <!-- Menu Desktop -->
+            <div class="hidden md:flex items-center space-x-6">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'core:dashboard' %}" class="nav-link-enhanced text-white/80 hover:text-white font-medium transition-all duration-300">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                    </a>
+                    
+                    {% if 'Tecnicos' in user.groups.all|join:', ' %}
+                        <a href="{% url 'connections:list' %}" class="nav-link-enhanced text-white/80 hover:text-white font-medium transition-all duration-300">
+                            <i class="fas fa-database mr-2"></i>Conexões
+                        </a>
+                    {% endif %}
+                {% endif %}
+                
+                <!-- User Menu -->
+                {% if user.is_authenticated %}
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 text-white/80 hover:text-white transition-colors">
+                            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-green-400 rounded-full flex items-center justify-center">
+                                <span class="text-sm font-semibold text-white">{{ user.first_name.0|default:user.username.0|upper }}</span>
+                            </div>
+                            <span class="font-medium text-sm">{{ user.get_full_name|default:user.username }}</span>
+                            {% if user.groups.all %}
+                                <span class="text-xs px-2 py-1 bg-purple-500/20 rounded-full border border-purple-500/30">{{ user.groups.first.name }}</span>
+                            {% endif %}
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        
+                        <!-- Dropdown -->
+                        <div x-show="open" @click.away="open = false" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-1 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="opacity-1 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-48 glass-light rounded-xl shadow-lg border border-purple-500/10 py-2">
+                            
+                            {% if 'Tecnicos' in user.groups.all|join:', ' %}
+                                <a href="#" id="toggleViewMode" 
+                                   data-url="{% url 'core:toggle_view_mode' %}"
+                                   class="flex items-center px-4 py-2 text-slate-700 hover:bg-purple-500/10 hover:text-purple-600 transition-colors text-sm">
+                                    <i class="fas fa-eye mr-2 w-4"></i>Ver como Usuário
+                                </a>
+                                <div class="border-t border-slate-200 my-1"></div>
+                            {% endif %}
+                            
+                            <a href="{% url 'core:logout' %}" 
+                               class="flex items-center px-4 py-2 text-slate-700 hover:bg-red-500/10 hover:text-red-600 transition-colors text-sm">
+                                <i class="fas fa-sign-out-alt mr-2 w-4"></i>Sair
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'core:login' %}" class="btn-forge-glass text-sm px-4 py-2">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Menu Mobile Button -->
+            <button id="mobile-menu-btn" class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Sidebar (apenas se logado) -->
+    {% if user.is_authenticated %}
+        <aside class="fixed left-0 sidebar-top w-64 bg-slate-900/95 backdrop-blur-xl border-r border-purple-500/20 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300" id="sidebar">
+            {% include 'partials/sidebar.html' %}
+        </aside>
+    {% endif %}
+
+    <!-- Conteúdo Principal -->
+    <main class="content-top {% if user.is_authenticated %}md:ml-64{% endif %} transition-all duration-300">
+        <!-- Messages -->
+        {% if messages %}
+            <div class="container mx-auto px-6 py-2">
+                {% for message in messages %}
+                    <div class="alert-forge {{ message.tags }} mb-3 animate-slide-up">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Content Area -->
+        <div class="container mx-auto px-6 py-4 relative z-10">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- CSRF Token -->
     <script>
         window.csrfToken = '{{ csrf_token }}';
     </script>
     
-    <!-- Custom JS -->
-    <script src="{% static 'js/scripts.js' %}"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Core JavaScript -->
+    <script src="{% static 'js/forge-core.js' %}"></script>
+    <script src="{% static 'js/forge-effects.js' %}"></script>
+    
+    <!-- Script para menu mobile -->
+    <script>
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+        
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('main-navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.remove('navbar-transparent');
+                navbar.classList.add('navbar-solid');
+            } else {
+                navbar.classList.remove('navbar-solid');
+                navbar.classList.add('navbar-transparent');
+            }
+        });
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>
