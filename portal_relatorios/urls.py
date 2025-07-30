@@ -20,9 +20,26 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # Django Admin
     path('admin/', admin.site.urls),
+    
+    # Core URLs (inclui home, dashboard, auth, toggle)
     path('', include('core.urls')),
+    
+    # Connections URLs - FASE 3
+    path('connections/', include('connections.urls')),
+    
+    # Future URLs para outras apps
+    # path('reports/', include('reports.urls')),
+    # path('users/', include('users.urls')),
 ]
 
+# Servir arquivos estáticos em desenvolvimento
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Configuração do admin
+admin.site.site_header = "ForgeReports - Administração"
+admin.site.site_title = "ForgeReports Admin"
+admin.site.index_title = "Painel Administrativo"

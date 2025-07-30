@@ -41,19 +41,20 @@
                             </a>
                             <div class="dropdown-menu" aria-labelledby="userDropdown">
                                 {% if 'Tecnicos' in user.groups.all|join:', ' %}
-                                    <a class="dropdown-item" href="#" id="toggleViewMode">
+                                    <a class="dropdown-item" href="#" id="toggleViewMode" 
+                                       data-url="{% url 'core:toggle_view_mode' %}">
                                         <i class="fas fa-eye"></i> Ver como Usuário
                                     </a>
                                     <div class="dropdown-divider"></div>
                                 {% endif %}
-                                <a class="dropdown-item" href="/admin/logout/">
+                                <a class="dropdown-item" href="{% url 'core:logout' %}">
                                     <i class="fas fa-sign-out-alt"></i> Sair
                                 </a>
                             </div>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="/admin/login/">Login</a>
+                            <a class="nav-link" href="{% url 'core:login' %}">Login</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -96,6 +97,11 @@
     
     <!-- Font Awesome -->
     <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
+    
+    <!-- CSRF Token para JavaScript -->
+    <script>
+        window.csrfToken = '{{ csrf_token }}';
+    </script>
     
     <!-- Custom JS -->
     <script src="{% static 'js/scripts.js' %}"></script>
