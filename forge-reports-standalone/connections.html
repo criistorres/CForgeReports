@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conexões - ForgeReports</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-900 text-white">
+    
+    <!-- Background Gradients -->
+    <div class="fixed inset-0 opacity-30">
+        <div class="absolute inset-0 liquid-gradient"></div>
+        <div class="absolute inset-0 liquid-gradient-alt opacity-50"></div>
+    </div>
+    
+    <!-- Mode Selector -->
+    <div class="fixed top-4 right-4 z-50 glass-card rounded-lg p-2">
+        <div class="flex space-x-2">
+            <button onclick="ForgeReports.showTechnicianView()" class="px-4 py-2 btn-primary rounded-lg text-white font-medium">
+                <i class="fas fa-cog mr-2"></i>Visão Técnico
+            </button>
+            <button onclick="ForgeReports.showUserView()" class="px-4 py-2 btn-secondary rounded-lg text-white font-medium">
+                <i class="fas fa-eye mr-2"></i>Visão Usuário
+            </button>
+        </div>
+    </div>
+
+    <!-- TECHNICIAN VIEW -->
+    <div id="technicianView" class="min-h-screen relative z-10">
+        <!-- Header -->
+        <header class="glass-card border-b border-purple-500/20">
+            <div class="loading-bar absolute top-0 left-0 right-0"></div>
+            <div class="px-6 h-14 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 liquid-gradient rounded-xl flex items-center justify-center shadow-lg glow-purple">
+                        <i class="fas fa-chart-bar text-slate-900 text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold gradient-text">ForgeReports</span>
+                        <span class="ml-2 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full border border-purple-500/30">ADMIN</span>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="flex space-x-8 tab-nav">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-th-large mr-2 text-purple-400"></i>Painel
+                    </a>
+                    <a href="reports.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-file-alt mr-2"></i>Relatórios
+                    </a>
+                    <a href="connections.html" class="text-white font-medium px-3 py-4 tab-active">
+                        <i class="fas fa-database mr-2"></i>Conexões
+                    </a>
+                    <a href="users.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-users mr-2"></i>Usuários
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-cog mr-2"></i>Config
+                    </a>
+                </nav>
+                
+                <!-- User Area -->
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-400 hover:text-white transition" title="Terminal">
+                        <i class="fas fa-terminal"></i>
+                    </button>
+                    <div class="w-8 h-8 liquid-gradient rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-6">
+            <!-- Terminal Status -->
+            <div class="terminal-effect rounded-lg px-4 py-2 mb-6 text-sm flex items-center justify-between">
+                <div>
+                    <span class="text-purple-400">forge@connections:~$</span>
+                    <span class="ml-2">db status --all</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-green-400">✓ 10 conexões ativas</span>
+                    <div class="status-dot active"></div>
+                </div>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text mb-2">Gerenciar Conexões</h1>
+                    <p class="text-gray-400">Configure e monitore suas conexões de banco de dados</p>
+                </div>
+                <button onclick="ForgeReports.openModal('newConnectionModal')" class="btn-primary px-6 py-3 rounded-lg font-medium">
+                    <i class="fas fa-plus mr-2"></i>Nova Conexão
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total</p>
+                            <p class="text-2xl font-bold gradient-text">12</p>
+                        </div>
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                            <i class="fas fa-database text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Ativas</p>
+                            <p class="text-2xl font-bold text-green-400">10</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Inativas</p>
+                            <p class="text-2xl font-bold text-red-400">2</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-times-circle text-red-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Tipos</p>
+                            <p class="text-2xl font-bold gradient-text">4</p>
+                        </div>
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                            <i class="fas fa-layer-group text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="glass-card rounded-xl p-6 mb-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input type="text" placeholder="Buscar conexões..." 
+                               class="form-input w-full pl-10 pr-4 py-3">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <select class="form-input px-4 py-3 min-w-[150px]">
+                        <option value="">Todos os tipos</option>
+                        <option value="postgresql">PostgreSQL</option>
+                        <option value="mysql">MySQL</option>
+                        <option value="oracle">Oracle</option>
+                        <option value="sqlserver">SQL Server</option>
+                        <option value="mongodb">MongoDB</option>
+                    </select>
+                    <select class="form-input px-4 py-3 min-w-[150px]">
+                        <option value="">Todos os status</option>
+                        <option value="active">Ativa</option>
+                        <option value="inactive">Inativa</option>
+                        <option value="testing">Testando</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Connections Table -->
+            <div class="table-container">
+                <div class="table-header p-4">
+                    <div class="grid grid-cols-12 gap-4 font-semibold text-sm">
+                        <div class="col-span-3">Nome / Tipo</div>
+                        <div class="col-span-3">Host / Porta</div>
+                        <div class="col-span-2">Status</div>
+                        <div class="col-span-2">Última Conexão</div>
+                        <div class="col-span-2">Ações</div>
+                    </div>
+                </div>
+                
+                <div class="divide-y divide-white/5">
+                    <!-- Connection 1 -->
+                    <div class="table-row p-4 filterable-item">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="col-span-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 liquid-gradient rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-database text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">CRM Produção</h3>
+                                        <p class="text-sm text-gray-400">POSTGRESQL</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-3">
+                                <div class="terminal-font text-sm">
+                                    <p class="text-white">db-prod.empresa.com</p>
+                                    <p class="text-gray-400">Porta: 5432</p>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <span class="badge active">
+                                    <i class="fas fa-circle mr-1"></i>Ativa
+                                </span>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-400">2 horas atrás</p>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="ForgeReports.testConnection('1')" 
+                                            class="p-2 glass-light rounded-lg text-blue-400 hover:bg-blue-500/20 transition" 
+                                            title="Testar Conexão">
+                                        <i class="fas fa-plug"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.openModal('editConnectionModal', '1')" 
+                                            class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.deleteItem('conexão', '1')" 
+                                            class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition" 
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connection 2 -->
+                    <div class="table-row p-4 filterable-item">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="col-span-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 liquid-gradient rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-database text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">ERP Principal</h3>
+                                        <p class="text-sm text-gray-400">MYSQL</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-3">
+                                <div class="terminal-font text-sm">
+                                    <p class="text-white">mysql.empresa.com</p>
+                                    <p class="text-gray-400">Porta: 3306</p>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <span class="badge active">
+                                    <i class="fas fa-circle mr-1"></i>Ativa
+                                </span>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-400">1 dia atrás</p>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="ForgeReports.testConnection('2')" 
+                                            class="p-2 glass-light rounded-lg text-blue-400 hover:bg-blue-500/20 transition" 
+                                            title="Testar Conexão">
+                                        <i class="fas fa-plug"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.openModal('editConnectionModal', '2')" 
+                                            class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.deleteItem('conexão', '2')" 
+                                            class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition" 
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connection 3 -->
+                    <div class="table-row p-4 filterable-item">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="col-span-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 liquid-gradient rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-database text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">Analytics DB</h3>
+                                        <p class="text-sm text-gray-400">ORACLE</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-3">
+                                <div class="terminal-font text-sm">
+                                    <p class="text-white">oracle.empresa.com</p>
+                                    <p class="text-gray-400">Porta: 1521</p>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <span class="badge inactive">
+                                    <i class="fas fa-circle mr-1"></i>Inativa
+                                </span>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-400">3 dias atrás</p>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="ForgeReports.testConnection('3')" 
+                                            class="p-2 glass-light rounded-lg text-blue-400 hover:bg-blue-500/20 transition" 
+                                            title="Testar Conexão">
+                                        <i class="fas fa-plug"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.openModal('editConnectionModal', '3')" 
+                                            class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.deleteItem('conexão', '3')" 
+                                            class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition" 
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- USER VIEW -->
+    <div id="userView" class="min-h-screen relative z-10 hidden">
+        <!-- User Header -->
+        <header class="glass-card border-b border-purple-500/20">
+            <div class="loading-bar absolute top-0 left-0 right-0"></div>
+            <div class="px-6 h-14 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 liquid-gradient rounded-xl flex items-center justify-center shadow-lg glow-purple">
+                        <i class="fas fa-chart-bar text-slate-900 text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold gradient-text">ForgeReports</span>
+                        <span class="ml-2 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full border border-green-500/30">USER</span>
+                    </div>
+                </div>
+                
+                <!-- User Navigation -->
+                <nav class="flex space-x-8 tab-nav">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-home mr-2 text-green-400"></i>Início
+                    </a>
+                    <a href="reports.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-file-alt mr-2"></i>Meus Relatórios
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-star mr-2"></i>Favoritos
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-history mr-2"></i>Histórico
+                    </a>
+                </nav>
+                
+                <!-- Search and User Area -->
+                <div class="flex items-center space-x-4">
+                    <!-- Search -->
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar relatórios..." 
+                               class="form-input w-64 pl-10 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:border-green-500/50">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    
+                    <!-- User Menu -->
+                    <div class="w-8 h-8 liquid-gradient rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- User Content -->
+        <main class="p-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-3xl font-bold gradient-text mb-4">Acesso Restrito</h1>
+                <p class="text-gray-400 text-lg mb-8">Esta seção é apenas para administradores</p>
+                <button onclick="ForgeReports.showTechnicianView()" class="btn-primary px-6 py-3 rounded-lg">
+                    <i class="fas fa-arrow-left mr-2"></i>Voltar ao Dashboard
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- New Connection Modal -->
+    <div id="newConnectionModal" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center">
+        <div class="modal-content max-w-2xl w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold gradient-text">Nova Conexão</h2>
+                <button onclick="ForgeReports.closeModal('newConnectionModal')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="newConnectionForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="form-label">Nome da Conexão</label>
+                        <input type="text" name="name" class="form-input w-full" placeholder="Ex: CRM Produção" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Tipo de Banco</label>
+                        <select name="type" class="form-input w-full" required>
+                            <option value="">Selecione...</option>
+                            <option value="postgresql">PostgreSQL</option>
+                            <option value="mysql">MySQL</option>
+                            <option value="oracle">Oracle</option>
+                            <option value="sqlserver">SQL Server</option>
+                            <option value="mongodb">MongoDB</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Host</label>
+                        <input type="text" name="host" class="form-input w-full" placeholder="localhost" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Porta</label>
+                        <input type="number" name="port" class="form-input w-full" placeholder="5432" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Banco de Dados</label>
+                        <input type="text" name="database" class="form-input w-full" placeholder="nome_do_banco" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Usuário</label>
+                        <input type="text" name="username" class="form-input w-full" placeholder="usuario" required>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="form-label">Senha</label>
+                        <input type="password" name="password" class="form-input w-full" placeholder="••••••••" required>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between pt-6 border-t border-gray-700">
+                    <button type="button" onclick="testConnectionForm()" class="btn-secondary px-6 py-3 rounded-lg">
+                        <i class="fas fa-plug mr-2"></i>Testar Conexão
+                    </button>
+                    <div class="space-x-3">
+                        <button type="button" onclick="ForgeReports.closeModal('newConnectionModal')" class="btn-secondary px-6 py-3 rounded-lg">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary px-6 py-3 rounded-lg">
+                            <i class="fas fa-save mr-2"></i>Salvar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/script.js"></script>
+    <script>
+        function testConnectionForm() {
+            const form = document.getElementById('newConnectionForm');
+            if (ForgeReports.validateForm('newConnectionForm')) {
+                ForgeReports.showNotification('Testando conexão...', 'info');
+                // Aqui você faria a chamada AJAX para testar a conexão
+                setTimeout(() => {
+                    ForgeReports.showNotification('Conexão testada com sucesso!', 'success');
+                }, 2000);
+            } else {
+                ForgeReports.showNotification('Preencha todos os campos obrigatórios', 'error');
+            }
+        }
+
+        document.getElementById('newConnectionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (ForgeReports.validateForm('newConnectionForm')) {
+                ForgeReports.showNotification('Conexão salva com sucesso!', 'success');
+                ForgeReports.closeModal('newConnectionModal');
+                // Aqui você faria a submissão do formulário via AJAX
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários - ForgeReports</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-900 text-white">
+    
+    <!-- Background Gradients -->
+    <div class="fixed inset-0 opacity-30">
+        <div class="absolute inset-0 liquid-gradient"></div>
+        <div class="absolute inset-0 liquid-gradient-alt opacity-50"></div>
+    </div>
+    
+    <!-- Mode Selector -->
+    <div class="fixed top-4 right-4 z-50 glass-card rounded-lg p-2">
+        <div class="flex space-x-2">
+            <button onclick="ForgeReports.showTechnicianView()" class="px-4 py-2 btn-primary rounded-lg text-white font-medium">
+                <i class="fas fa-cog mr-2"></i>Visão Técnico
+            </button>
+            <button onclick="ForgeReports.showUserView()" class="px-4 py-2 btn-secondary rounded-lg text-white font-medium">
+                <i class="fas fa-eye mr-2"></i>Visão Usuário
+            </button>
+        </div>
+    </div>
+
+    <!-- TECHNICIAN VIEW -->
+    <div id="technicianView" class="min-h-screen relative z-10">
+        <!-- Header -->
+        <header class="glass-card border-b border-purple-500/20">
+            <div class="loading-bar absolute top-0 left-0 right-0"></div>
+            <div class="px-6 h-14 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 liquid-gradient rounded-xl flex items-center justify-center shadow-lg glow-purple">
+                        <i class="fas fa-chart-bar text-slate-900 text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold gradient-text">ForgeReports</span>
+                        <span class="ml-2 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full border border-purple-500/30">ADMIN</span>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="flex space-x-8 tab-nav">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-th-large mr-2 text-purple-400"></i>Painel
+                    </a>
+                    <a href="reports.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-file-alt mr-2"></i>Relatórios
+                    </a>
+                    <a href="connections.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-database mr-2"></i>Conexões
+                    </a>
+                    <a href="users.html" class="text-white font-medium px-3 py-4 tab-active">
+                        <i class="fas fa-users mr-2"></i>Usuários
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-cog mr-2"></i>Config
+                    </a>
+                </nav>
+                
+                <!-- User Area -->
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-400 hover:text-white transition" title="Terminal">
+                        <i class="fas fa-terminal"></i>
+                    </button>
+                    <div class="w-8 h-8 liquid-gradient rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-6">
+            <!-- Terminal Status -->
+            <div class="terminal-effect rounded-lg px-4 py-2 mb-6 text-sm flex items-center justify-between">
+                <div>
+                    <span class="text-purple-400">forge@users:~$</span>
+                    <span class="ml-2">user status --online</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-green-400">✓ 24 usuários online</span>
+                    <div class="status-dot active"></div>
+                </div>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text mb-2">Gerenciar Usuários</h1>
+                    <p class="text-gray-400">Controle de acesso e permissões do sistema</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="ForgeReports.openModal('inviteUserModal')" class="btn-secondary px-4 py-3 rounded-lg font-medium">
+                        <i class="fas fa-paper-plane mr-2"></i>Convidar
+                    </button>
+                    <button onclick="ForgeReports.openModal('newUserModal')" class="btn-primary px-6 py-3 rounded-lg font-medium">
+                        <i class="fas fa-user-plus mr-2"></i>Novo Usuário
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total</p>
+                            <p class="text-2xl font-bold gradient-text">128</p>
+                        </div>
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Online</p>
+                            <p class="text-2xl font-bold text-green-400">24</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-circle text-green-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Admins</p>
+                            <p class="text-2xl font-bold text-purple-400">5</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-crown text-purple-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Ativos</p>
+                            <p class="text-2xl font-bold text-blue-400">120</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-check-circle text-blue-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Novos</p>
+                            <p class="text-2xl font-bold text-yellow-400">8</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-user-plus text-yellow-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="glass-card rounded-xl p-6 mb-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input type="text" placeholder="Buscar usuários..." 
+                               class="form-input w-full pl-10 pr-4 py-3">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <select class="form-input px-4 py-3 min-w-[150px]">
+                        <option value="">Todos os grupos</option>
+                        <option value="admin">Administradores</option>
+                        <option value="manager">Gerentes</option>
+                        <option value="user">Usuários</option>
+                        <option value="viewer">Visualizadores</option>
+                    </select>
+                    <select class="form-input px-4 py-3 min-w-[150px]">
+                        <option value="">Todos os status</option>
+                        <option value="active">Ativo</option>
+                        <option value="inactive">Inativo</option>
+                        <option value="pending">Pendente</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-container">
+                <div class="table-header p-4">
+                    <div class="grid grid-cols-12 gap-4 font-semibold text-sm">
+                        <div class="col-span-3">Usuário</div>
+                        <div class="col-span-2">Grupo</div>
+                        <div class="col-span-2">Status</div>
+                        <div class="col-span-2">Último Acesso</div>
+                        <div class="col-span-1">Relatórios</div>
+                        <div class="col-span-2">Ações</div>
+                    </div>
+                </div>
+                
+                <div class="divide-y divide-white/5">
+                    <!-- User 1 -->
+                    <div class="table-row p-4 filterable-item">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="col-span-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 liquid-gradient rounded-full flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">JD</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">João da Silva</h3>
+                                        <p class="text-sm text-gray-400">joao.silva@empresa.com</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <span class="badge active">
+                                    <i class="fas fa-crown mr-1"></i>Admin
+                                </span>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <div class="status-dot active"></div>
+                                    <span class="text-sm text-green-400">Online</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-400">Agora</p>
+                            </div>
+                            
+                            <div class="col-span-1">
+                                <p class="text-sm font-medium">15</p>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="ForgeReports.openModal('editUserModal', '1')" 
+                                            class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.toggleUserStatus('1')" 
+                                            class="p-2 glass-light rounded-lg text-blue-400 hover:bg-blue-500/20 transition" 
+                                            title="Alterar Status">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.deleteItem('usuário', '1')" 
+                                            class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition" 
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User 2 -->
+                    <div class="table-row p-4 filterable-item">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="col-span-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 liquid-gradient rounded-full flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">MS</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">Maria Santos</h3>
+                                        <p class="text-sm text-gray-400">maria.santos@empresa.com</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <span class="badge pending">
+                                    <i class="fas fa-user-tie mr-1"></i>Gerente
+                                </span>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <div class="status-dot active"></div>
+                                    <span class="text-sm text-green-400">Online</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-400">5 min atrás</p>
+                            </div>
+                            
+                            <div class="col-span-1">
+                                <p class="text-sm font-medium">8</p>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="ForgeReports.openModal('editUserModal', '2')" 
+                                            class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.toggleUserStatus('2')" 
+                                            class="p-2 glass-light rounded-lg text-blue-400 hover:bg-blue-500/20 transition" 
+                                            title="Alterar Status">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.deleteItem('usuário', '2')" 
+                                            class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition" 
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User 3 -->
+                    <div class="table-row p-4 filterable-item">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="col-span-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 liquid-gradient rounded-full flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">PC</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">Pedro Costa</h3>
+                                        <p class="text-sm text-gray-400">pedro.costa@empresa.com</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <span class="badge active">
+                                    <i class="fas fa-user mr-1"></i>Usuário
+                                </span>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-gray-500 rounded-full"></div>
+                                    <span class="text-sm text-gray-400">Offline</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-400">2 horas atrás</p>
+                            </div>
+                            
+                            <div class="col-span-1">
+                                <p class="text-sm font-medium">3</p>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="ForgeReports.openModal('editUserModal', '3')" 
+                                            class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.toggleUserStatus('3')" 
+                                            class="p-2 glass-light rounded-lg text-blue-400 hover:bg-blue-500/20 transition" 
+                                            title="Alterar Status">
+                                        <i class="fas fa-toggle-on"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.deleteItem('usuário', '3')" 
+                                            class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition" 
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User 4 -->
+                    <div class="table-row p-4 filterable-item">
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <div class="col-span-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 liquid-gradient rounded-full flex items-center justify-center">
+                                        <span class="text-white font-semibold text-sm">AL</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">Ana Lima</h3>
+                                        <p class="text-sm text-gray-400">ana.lima@empresa.com</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <span class="badge inactive">
+                                    <i class="fas fa-eye mr-1"></i>Visualizador
+                                </span>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                    <span class="text-sm text-red-400">Inativo</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-400">1 semana atrás</p>
+                            </div>
+                            
+                            <div class="col-span-1">
+                                <p class="text-sm font-medium">0</p>
+                            </div>
+                            
+                            <div class="col-span-2">
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="ForgeReports.openModal('editUserModal', '4')" 
+                                            class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition" 
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.toggleUserStatus('4')" 
+                                            class="p-2 glass-light rounded-lg text-green-400 hover:bg-green-500/20 transition" 
+                                            title="Ativar">
+                                        <i class="fas fa-toggle-off"></i>
+                                    </button>
+                                    <button onclick="ForgeReports.deleteItem('usuário', '4')" 
+                                            class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition" 
+                                            title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- USER VIEW -->
+    <div id="userView" class="min-h-screen relative z-10 hidden">
+        <!-- User Header -->
+        <header class="glass-card border-b border-purple-500/20">
+            <div class="loading-bar absolute top-0 left-0 right-0"></div>
+            <div class="px-6 h-14 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 liquid-gradient rounded-xl flex items-center justify-center shadow-lg glow-purple">
+                        <i class="fas fa-chart-bar text-slate-900 text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold gradient-text">ForgeReports</span>
+                        <span class="ml-2 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full border border-green-500/30">USER</span>
+                    </div>
+                </div>
+                
+                <!-- User Navigation -->
+                <nav class="flex space-x-8 tab-nav">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-home mr-2 text-green-400"></i>Início
+                    </a>
+                    <a href="reports.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-file-alt mr-2"></i>Meus Relatórios
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-star mr-2"></i>Favoritos
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-history mr-2"></i>Histórico
+                    </a>
+                </nav>
+                
+                <!-- Search and User Area -->
+                <div class="flex items-center space-x-4">
+                    <!-- Search -->
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar relatórios..." 
+                               class="form-input w-64 pl-10 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:border-green-500/50">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    
+                    <!-- User Menu -->
+                    <div class="w-8 h-8 liquid-gradient rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- User Content -->
+        <main class="p-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-3xl font-bold gradient-text mb-4">Acesso Restrito</h1>
+                <p class="text-gray-400 text-lg mb-8">Esta seção é apenas para administradores</p>
+                <button onclick="ForgeReports.showTechnicianView()" class="btn-primary px-6 py-3 rounded-lg">
+                    <i class="fas fa-arrow-left mr-2"></i>Voltar ao Dashboard
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- New User Modal -->
+    <div id="newUserModal" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center">
+        <div class="modal-content max-w-2xl w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold gradient-text">Novo Usuário</h2>
+                <button onclick="ForgeReports.closeModal('newUserModal')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="newUserForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="form-label">Nome Completo</label>
+                        <input type="text" name="name" class="form-input w-full" placeholder="Ex: João da Silva" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-input w-full" placeholder="joao@empresa.com" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Grupo</label>
+                        <select name="group" class="form-input w-full" required>
+                            <option value="">Selecione...</option>
+                            <option value="admin">Administrador</option>
+                            <option value="manager">Gerente</option>
+                            <option value="user">Usuário</option>
+                            <option value="viewer">Visualizador</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Departamento</label>
+                        <input type="text" name="department" class="form-input w-full" placeholder="Ex: Vendas">
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Senha Temporária</label>
+                        <input type="password" name="password" class="form-input w-full" placeholder="••••••••" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Confirmar Senha</label>
+                        <input type="password" name="confirm_password" class="form-input w-full" placeholder="••••••••" required>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3">
+                        <input type="checkbox" name="send_email" class="form-checkbox" checked>
+                        <span class="text-sm">Enviar email de boas-vindas</span>
+                    </label>
+                    <label class="flex items-center space-x-3">
+                        <input type="checkbox" name="force_password_change" class="form-checkbox" checked>
+                        <span class="text-sm">Forçar alteração de senha no primeiro login</span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-700">
+                    <button type="button" onclick="ForgeReports.closeModal('newUserModal')" class="btn-secondary px-6 py-3 rounded-lg">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary px-6 py-3 rounded-lg">
+                        <i class="fas fa-user-plus mr-2"></i>Criar Usuário
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invite User Modal -->
+    <div id="inviteUserModal" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center">
+        <div class="modal-content max-w-lg w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold gradient-text">Convidar Usuário</h2>
+                <button onclick="ForgeReports.closeModal('inviteUserModal')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="inviteUserForm" class="space-y-6">
+                <div>
+                    <label class="form-label">Email do Convidado</label>
+                    <input type="email" name="email" class="form-input w-full" placeholder="usuario@empresa.com" required>
+                </div>
+                
+                <div>
+                    <label class="form-label">Grupo</label>
+                    <select name="group" class="form-input w-full" required>
+                        <option value="">Selecione...</option>
+                        <option value="manager">Gerente</option>
+                        <option value="user">Usuário</option>
+                        <option value="viewer">Visualizador</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="form-label">Mensagem Personalizada (Opcional)</label>
+                    <textarea name="message" class="form-input w-full h-20" placeholder="Adicione uma mensagem personalizada ao convite..."></textarea>
+                </div>
+                
+                <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-700">
+                    <button type="button" onclick="ForgeReports.closeModal('inviteUserModal')" class="btn-secondary px-6 py-3 rounded-lg">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary px-6 py-3 rounded-lg">
+                        <i class="fas fa-paper-plane mr-2"></i>Enviar Convite
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/script.js"></script>
+    <script>
+        document.getElementById('newUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const password = this.password.value;
+            const confirmPassword = this.confirm_password.value;
+            
+            if (password !== confirmPassword) {
+                ForgeReports.showNotification('As senhas não coincidem', 'error');
+                return;
+            }
+            
+            if (ForgeReports.validateForm('newUserForm')) {
+                ForgeReports.showNotification('Usuário criado com sucesso!', 'success');
+                ForgeReports.closeModal('newUserModal');
+                // Aqui você faria a submissão do formulário via AJAX
+            }
+        });
+
+        document.getElementById('inviteUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (ForgeReports.validateForm('inviteUserForm')) {
+                ForgeReports.showNotification('Convite enviado com sucesso!', 'success');
+                ForgeReports.closeModal('inviteUserModal');
+                // Aqui você faria a submissão do formulário via AJAX
+            }
+        });
+    </script>
+</body>
+</html>
+

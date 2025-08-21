@@ -1,0 +1,399 @@
+/* ForgeReports - Estilos Principais */
+
+/* Fontes */
+body { 
+    font-family: 'Inter', sans-serif;
+    background: #0f172a;
+}
+
+.terminal-font {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Gradientes Líquidos Animados */
+.liquid-gradient {
+    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe, #a8edea, #fed6e3);
+    background-size: 400% 400%;
+    animation: liquidFlow 15s ease infinite;
+}
+
+.liquid-gradient-alt {
+    background: linear-gradient(45deg, #a855f7, #06d6a0, #3b82f6, #8b5cf6, #10b981, #6366f1);
+    background-size: 300% 300%;
+    animation: liquidFlow 20s ease infinite reverse;
+}
+
+@keyframes liquidFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2);
+    transform: translateY(-2px);
+}
+
+.glass-light {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Glow Effects */
+.glow-purple {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+}
+
+.glow-green {
+    box-shadow: 0 0 20px rgba(6, 214, 160, 0.5);
+}
+
+/* Gradient Borders */
+.gradient-border {
+    position: relative;
+    background: linear-gradient(#0f172a, #0f172a) padding-box,
+                linear-gradient(135deg, #a855f7, #06d6a0) border-box;
+    border: 2px solid transparent;
+}
+
+/* Control Cards Special */
+.control-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.control-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #a855f7, #06d6a0, #3b82f6);
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.control-card:hover::before {
+    opacity: 1;
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: linear-gradient(135deg, #a855f7 0%, #06d6a0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, #a855f7, #8b5cf6);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #8b5cf6, #764ba2);
+    box-shadow: 0 10px 25px rgba(168, 85, 247, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(168, 85, 247, 0.4);
+}
+
+/* Tab Navigation Enhanced */
+.tab-nav {
+    position: relative;
+}
+
+.tab-nav::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.3), transparent);
+}
+
+.tab-active {
+    position: relative;
+}
+
+.tab-active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #a855f7, #06d6a0);
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
+/* Folder Tree Enhanced */
+.folder-item {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.folder-item:hover {
+    background: rgba(168, 85, 247, 0.05);
+    border-radius: 8px;
+}
+
+.folder-tree-line {
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.2), transparent);
+}
+
+/* Status Indicators */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: relative;
+}
+
+.status-dot.active {
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot.active::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.2);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Quick Action Cards */
+.quick-action {
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    transition: all 0.3s ease;
+}
+
+.quick-action:hover {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: rgba(168, 85, 247, 0.4);
+    transform: translateX(4px);
+}
+
+/* Loading Animation */
+.loading-bar {
+    height: 2px;
+    background: linear-gradient(90deg, #a855f7, #06d6a0, #a855f7);
+    background-size: 200% 100%;
+    animation: loading 1.5s ease infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+}
+
+/* Terminal Effect */
+.terminal-effect {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid #a855f7;
+    color: #00ff00;
+    font-family: 'JetBrains Mono', monospace;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a855f7, #06d6a0);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #8b5cf6, #10b981);
+}
+
+/* Estilos específicos para tabelas */
+.table-container {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table-header {
+    background: rgba(168, 85, 247, 0.1);
+    border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.table-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.table-row:hover {
+    background: rgba(168, 85, 247, 0.05);
+}
+
+/* Estilos para formulários */
+.form-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.form-label {
+    color: #e2e8f0;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Estilos para modais */
+.modal-overlay {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Estilos para notificações */
+.notification {
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.notification.success {
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.notification.error {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.notification.warning {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Estilos para badges */
+.badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge.inactive {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.badge.pending {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .glass-card {
+        margin: 8px;
+        padding: 16px;
+    }
+    
+    .control-card {
+        margin-bottom: 16px;
+    }
+    
+    .tab-nav {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .control-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

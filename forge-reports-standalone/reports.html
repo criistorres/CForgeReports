@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - ForgeReports</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-900 text-white">
+    
+    <!-- Background Gradients -->
+    <div class="fixed inset-0 opacity-30">
+        <div class="absolute inset-0 liquid-gradient"></div>
+        <div class="absolute inset-0 liquid-gradient-alt opacity-50"></div>
+    </div>
+    
+    <!-- Mode Selector -->
+    <div class="fixed top-4 right-4 z-50 glass-card rounded-lg p-2">
+        <div class="flex space-x-2">
+            <button onclick="ForgeReports.showTechnicianView()" class="px-4 py-2 btn-primary rounded-lg text-white font-medium">
+                <i class="fas fa-cog mr-2"></i>Visão Técnico
+            </button>
+            <button onclick="ForgeReports.showUserView()" class="px-4 py-2 btn-secondary rounded-lg text-white font-medium">
+                <i class="fas fa-eye mr-2"></i>Visão Usuário
+            </button>
+        </div>
+    </div>
+
+    <!-- TECHNICIAN VIEW -->
+    <div id="technicianView" class="min-h-screen relative z-10">
+        <!-- Header -->
+        <header class="glass-card border-b border-purple-500/20">
+            <div class="loading-bar absolute top-0 left-0 right-0"></div>
+            <div class="px-6 h-14 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 liquid-gradient rounded-xl flex items-center justify-center shadow-lg glow-purple">
+                        <i class="fas fa-chart-bar text-slate-900 text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold gradient-text">ForgeReports</span>
+                        <span class="ml-2 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full border border-purple-500/30">ADMIN</span>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="flex space-x-8 tab-nav">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-th-large mr-2 text-purple-400"></i>Painel
+                    </a>
+                    <a href="reports.html" class="text-white font-medium px-3 py-4 tab-active">
+                        <i class="fas fa-file-alt mr-2"></i>Relatórios
+                    </a>
+                    <a href="connections.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-database mr-2"></i>Conexões
+                    </a>
+                    <a href="users.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-users mr-2"></i>Usuários
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-cog mr-2"></i>Config
+                    </a>
+                </nav>
+                
+                <!-- User Area -->
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-400 hover:text-white transition" title="Terminal">
+                        <i class="fas fa-terminal"></i>
+                    </button>
+                    <div class="w-8 h-8 liquid-gradient rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-6">
+            <!-- Terminal Status -->
+            <div class="terminal-effect rounded-lg px-4 py-2 mb-6 text-sm flex items-center justify-between">
+                <div>
+                    <span class="text-purple-400">forge@reports:~$</span>
+                    <span class="ml-2">query status --active</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-green-400">✓ 45 relatórios ativos</span>
+                    <div class="status-dot active"></div>
+                </div>
+            </div>
+
+            <!-- Page Header -->
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text mb-2">Gerenciar Relatórios</h1>
+                    <p class="text-gray-400">Crie, edite e organize suas queries SQL</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="ForgeReports.openModal('newFolderModal')" class="btn-secondary px-4 py-3 rounded-lg font-medium">
+                        <i class="fas fa-folder-plus mr-2"></i>Nova Pasta
+                    </button>
+                    <button onclick="ForgeReports.openModal('newReportModal')" class="btn-primary px-6 py-3 rounded-lg font-medium">
+                        <i class="fas fa-plus mr-2"></i>Novo Relatório
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total</p>
+                            <p class="text-2xl font-bold gradient-text">45</p>
+                        </div>
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                            <i class="fas fa-file-alt text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Favoritos</p>
+                            <p class="text-2xl font-bold text-yellow-400">8</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-star text-yellow-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Hoje</p>
+                            <p class="text-2xl font-bold text-green-400">24</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-play text-green-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Pastas</p>
+                            <p class="text-2xl font-bold gradient-text">6</p>
+                        </div>
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                            <i class="fas fa-folder text-white"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Tempo Médio</p>
+                            <p class="text-2xl font-bold text-blue-400">1.2s</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-clock text-blue-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Recentes</p>
+                            <p class="text-2xl font-bold text-purple-400">12</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-history text-purple-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Layout -->
+            <div class="grid grid-cols-12 gap-6">
+                <!-- Sidebar - Folders -->
+                <div class="col-span-3">
+                    <div class="glass-card rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Pastas</h3>
+                            <button onclick="ForgeReports.openModal('newFolderModal')" class="text-purple-400 hover:text-purple-300">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="folder-item p-3 rounded-lg cursor-pointer flex items-center space-x-3 bg-purple-500/10 border border-purple-500/20">
+                                <i class="fas fa-folder text-purple-400"></i>
+                                <span class="text-sm font-medium">Vendas</span>
+                                <span class="ml-auto text-xs text-gray-400">12</span>
+                            </div>
+                            
+                            <div class="folder-item p-3 rounded-lg cursor-pointer flex items-center space-x-3 hover:bg-purple-500/5">
+                                <i class="fas fa-folder text-gray-400"></i>
+                                <span class="text-sm">Financeiro</span>
+                                <span class="ml-auto text-xs text-gray-400">8</span>
+                            </div>
+                            
+                            <div class="folder-item p-3 rounded-lg cursor-pointer flex items-center space-x-3 hover:bg-purple-500/5">
+                                <i class="fas fa-folder text-gray-400"></i>
+                                <span class="text-sm">RH</span>
+                                <span class="ml-auto text-xs text-gray-400">5</span>
+                            </div>
+                            
+                            <div class="folder-item p-3 rounded-lg cursor-pointer flex items-center space-x-3 hover:bg-purple-500/5">
+                                <i class="fas fa-folder text-gray-400"></i>
+                                <span class="text-sm">Operações</span>
+                                <span class="ml-auto text-xs text-gray-400">15</span>
+                            </div>
+                            
+                            <div class="folder-item p-3 rounded-lg cursor-pointer flex items-center space-x-3 hover:bg-purple-500/5">
+                                <i class="fas fa-folder text-gray-400"></i>
+                                <span class="text-sm">Marketing</span>
+                                <span class="ml-auto text-xs text-gray-400">3</span>
+                            </div>
+                            
+                            <div class="folder-item p-3 rounded-lg cursor-pointer flex items-center space-x-3 hover:bg-purple-500/5">
+                                <i class="fas fa-folder text-gray-400"></i>
+                                <span class="text-sm">Desenvolvimento</span>
+                                <span class="ml-auto text-xs text-gray-400">2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content - Reports -->
+                <div class="col-span-9">
+                    <!-- Filters and Search -->
+                    <div class="glass-card rounded-xl p-6 mb-6">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1 relative">
+                                <input type="text" placeholder="Buscar relatórios..." 
+                                       class="form-input w-full pl-10 pr-4 py-3">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            <select class="form-input px-4 py-3 min-w-[150px]">
+                                <option value="">Todas as conexões</option>
+                                <option value="1">CRM Produção</option>
+                                <option value="2">ERP Principal</option>
+                                <option value="3">Analytics DB</option>
+                            </select>
+                            <select class="form-input px-4 py-3 min-w-[150px]">
+                                <option value="">Todas as pastas</option>
+                                <option value="vendas">Vendas</option>
+                                <option value="financeiro">Financeiro</option>
+                                <option value="rh">RH</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Reports Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Report Card 1 -->
+                        <div class="glass-card rounded-xl p-6 filterable-item hover:border-purple-500/40 transition-all group">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-chart-line text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold">Vendas por Região - Q4 2024</h3>
+                                        <p class="text-sm text-gray-400">CRM Produção • Pasta: Vendas</p>
+                                    </div>
+                                </div>
+                                <button onclick="ForgeReports.toggleFavorite('1')" class="text-yellow-400 hover:text-yellow-300">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                            </div>
+                            
+                            <p class="text-gray-400 text-sm mb-4">Análise detalhada das vendas por região no último trimestre de 2024</p>
+                            
+                            <div class="terminal-effect rounded-lg p-3 mb-4 text-xs">
+                                <div class="text-green-400 mb-1">-- Query Preview</div>
+                                <div class="text-gray-300">SELECT r.nome_regiao, SUM(v.valor_total) as total_vendas</div>
+                                <div class="text-gray-300">FROM vendas v JOIN regioes r ON v.regiao_id = r.id</div>
+                                <div class="text-gray-300">WHERE v.data_venda >= '2024-10-01'...</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-sm text-gray-400 mb-4">
+                                <span>Última execução: 2 horas atrás</span>
+                                <span>Tempo: 1.2s</span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button onclick="ForgeReports.executeReport('1')" class="btn-primary flex-1 py-2 rounded-lg text-sm">
+                                    <i class="fas fa-play mr-2"></i>Executar
+                                </button>
+                                <button onclick="ForgeReports.openModal('editReportModal', '1')" class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="ForgeReports.deleteItem('relatório', '1')" class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Report Card 2 -->
+                        <div class="glass-card rounded-xl p-6 filterable-item hover:border-purple-500/40 transition-all group">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-users text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold">Performance de Vendedores</h3>
+                                        <p class="text-sm text-gray-400">CRM Produção • Pasta: Vendas</p>
+                                    </div>
+                                </div>
+                                <button onclick="ForgeReports.toggleFavorite('2')" class="text-gray-400 hover:text-yellow-400">
+                                    <i class="far fa-star"></i>
+                                </button>
+                            </div>
+                            
+                            <p class="text-gray-400 text-sm mb-4">Ranking de vendedores por performance e metas atingidas</p>
+                            
+                            <div class="terminal-effect rounded-lg p-3 mb-4 text-xs">
+                                <div class="text-green-400 mb-1">-- Query Preview</div>
+                                <div class="text-gray-300">SELECT v.nome_vendedor, COUNT(*) as total_vendas,</div>
+                                <div class="text-gray-300">SUM(vd.valor_total) as faturamento</div>
+                                <div class="text-gray-300">FROM vendedores v JOIN vendas vd ON v.id = vd.vendedor_id...</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-sm text-gray-400 mb-4">
+                                <span>Última execução: 1 dia atrás</span>
+                                <span>Tempo: 0.8s</span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button onclick="ForgeReports.executeReport('2')" class="btn-primary flex-1 py-2 rounded-lg text-sm">
+                                    <i class="fas fa-play mr-2"></i>Executar
+                                </button>
+                                <button onclick="ForgeReports.openModal('editReportModal', '2')" class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="ForgeReports.deleteItem('relatório', '2')" class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Report Card 3 -->
+                        <div class="glass-card rounded-xl p-6 filterable-item hover:border-purple-500/40 transition-all group">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-shopping-cart text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold">Produtos Mais Vendidos</h3>
+                                        <p class="text-sm text-gray-400">ERP Principal • Pasta: Vendas</p>
+                                    </div>
+                                </div>
+                                <button onclick="ForgeReports.toggleFavorite('3')" class="text-yellow-400 hover:text-yellow-300">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                            </div>
+                            
+                            <p class="text-gray-400 text-sm mb-4">Top 10 produtos com maior volume de vendas no período</p>
+                            
+                            <div class="terminal-effect rounded-lg p-3 mb-4 text-xs">
+                                <div class="text-green-400 mb-1">-- Query Preview</div>
+                                <div class="text-gray-300">SELECT p.nome_produto, SUM(iv.quantidade) as qtd_vendida,</div>
+                                <div class="text-gray-300">SUM(iv.valor_total) as receita_total</div>
+                                <div class="text-gray-300">FROM produtos p JOIN itens_venda iv ON p.id = iv.produto_id...</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-sm text-gray-400 mb-4">
+                                <span>Última execução: 3 dias atrás</span>
+                                <span>Tempo: 2.1s</span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button onclick="ForgeReports.executeReport('3')" class="btn-primary flex-1 py-2 rounded-lg text-sm">
+                                    <i class="fas fa-play mr-2"></i>Executar
+                                </button>
+                                <button onclick="ForgeReports.openModal('editReportModal', '3')" class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="ForgeReports.deleteItem('relatório', '3')" class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Report Card 4 -->
+                        <div class="glass-card rounded-xl p-6 filterable-item hover:border-purple-500/40 transition-all group">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-dollar-sign text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold">Fluxo de Caixa Mensal</h3>
+                                        <p class="text-sm text-gray-400">ERP Principal • Pasta: Financeiro</p>
+                                    </div>
+                                </div>
+                                <button onclick="ForgeReports.toggleFavorite('4')" class="text-gray-400 hover:text-yellow-400">
+                                    <i class="far fa-star"></i>
+                                </button>
+                            </div>
+                            
+                            <p class="text-gray-400 text-sm mb-4">Análise do fluxo de caixa com entradas e saídas mensais</p>
+                            
+                            <div class="terminal-effect rounded-lg p-3 mb-4 text-xs">
+                                <div class="text-green-400 mb-1">-- Query Preview</div>
+                                <div class="text-gray-300">SELECT DATE_TRUNC('month', data_movimento) as mes,</div>
+                                <div class="text-gray-300">SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) as entradas,</div>
+                                <div class="text-gray-300">SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END) as saidas...</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-sm text-gray-400 mb-4">
+                                <span>Última execução: 5 horas atrás</span>
+                                <span>Tempo: 1.8s</span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button onclick="ForgeReports.executeReport('4')" class="btn-primary flex-1 py-2 rounded-lg text-sm">
+                                    <i class="fas fa-play mr-2"></i>Executar
+                                </button>
+                                <button onclick="ForgeReports.openModal('editReportModal', '4')" class="p-2 glass-light rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="ForgeReports.deleteItem('relatório', '4')" class="p-2 glass-light rounded-lg text-red-400 hover:bg-red-500/20 transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- USER VIEW -->
+    <div id="userView" class="min-h-screen relative z-10 hidden">
+        <!-- User Header -->
+        <header class="glass-card border-b border-purple-500/20">
+            <div class="loading-bar absolute top-0 left-0 right-0"></div>
+            <div class="px-6 h-14 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 liquid-gradient rounded-xl flex items-center justify-center shadow-lg glow-purple">
+                        <i class="fas fa-chart-bar text-slate-900 text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold gradient-text">ForgeReports</span>
+                        <span class="ml-2 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full border border-green-500/30">USER</span>
+                    </div>
+                </div>
+                
+                <!-- User Navigation -->
+                <nav class="flex space-x-8 tab-nav">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-home mr-2 text-green-400"></i>Início
+                    </a>
+                    <a href="reports.html" class="text-white font-medium px-3 py-4 tab-active">
+                        <i class="fas fa-file-alt mr-2"></i>Meus Relatórios
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-star mr-2"></i>Favoritos
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition px-3 py-4">
+                        <i class="fas fa-history mr-2"></i>Histórico
+                    </a>
+                </nav>
+                
+                <!-- Search and User Area -->
+                <div class="flex items-center space-x-4">
+                    <!-- Search -->
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar relatórios..." 
+                               class="form-input w-64 pl-10 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:border-green-500/50">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    
+                    <!-- User Menu -->
+                    <div class="w-8 h-8 liquid-gradient rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- User Content -->
+        <main class="p-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-bold gradient-text mb-4">Meus Relatórios</h1>
+                    <p class="text-gray-400 text-lg">Execute e visualize seus relatórios favoritos</p>
+                </div>
+                
+                <!-- User Reports Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="glass-card rounded-xl p-6 hover:border-green-500/40 transition-all cursor-pointer group">
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center mb-4">
+                            <i class="fas fa-chart-line text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Vendas Mensais</h3>
+                        <p class="text-gray-400 text-sm mb-4">Relatório de vendas do último mês</p>
+                        <div class="flex items-center justify-between text-xs text-gray-400 mb-4">
+                            <span>Última execução: 2h atrás</span>
+                            <span class="text-yellow-400"><i class="fas fa-star mr-1"></i>Favorito</span>
+                        </div>
+                        <button onclick="ForgeReports.executeReport('1')" class="btn-primary w-full py-2 rounded-lg">
+                            <i class="fas fa-play mr-2"></i>Executar
+                        </button>
+                    </div>
+                    
+                    <div class="glass-card rounded-xl p-6 hover:border-green-500/40 transition-all cursor-pointer group">
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center mb-4">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Clientes Ativos</h3>
+                        <p class="text-gray-400 text-sm mb-4">Lista de clientes com atividade recente</p>
+                        <div class="flex items-center justify-between text-xs text-gray-400 mb-4">
+                            <span>Última execução: 1d atrás</span>
+                            <span>Compartilhado</span>
+                        </div>
+                        <button onclick="ForgeReports.executeReport('2')" class="btn-primary w-full py-2 rounded-lg">
+                            <i class="fas fa-play mr-2"></i>Executar
+                        </button>
+                    </div>
+                    
+                    <div class="glass-card rounded-xl p-6 hover:border-green-500/40 transition-all cursor-pointer group">
+                        <div class="w-12 h-12 liquid-gradient rounded-xl flex items-center justify-center mb-4">
+                            <i class="fas fa-shopping-cart text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Top Produtos</h3>
+                        <p class="text-gray-400 text-sm mb-4">Produtos mais vendidos do trimestre</p>
+                        <div class="flex items-center justify-between text-xs text-gray-400 mb-4">
+                            <span>Última execução: 3d atrás</span>
+                            <span class="text-yellow-400"><i class="fas fa-star mr-1"></i>Favorito</span>
+                        </div>
+                        <button onclick="ForgeReports.executeReport('3')" class="btn-primary w-full py-2 rounded-lg">
+                            <i class="fas fa-play mr-2"></i>Executar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- New Report Modal -->
+    <div id="newReportModal" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center">
+        <div class="modal-content max-w-4xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold gradient-text">Novo Relatório</h2>
+                <button onclick="ForgeReports.closeModal('newReportModal')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="newReportForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="form-label">Nome do Relatório</label>
+                        <input type="text" name="name" class="form-input w-full" placeholder="Ex: Vendas por Região" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Conexão</label>
+                        <select name="connection" class="form-input w-full" required>
+                            <option value="">Selecione uma conexão...</option>
+                            <option value="1">CRM Produção</option>
+                            <option value="2">ERP Principal</option>
+                            <option value="3">Analytics DB</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Pasta</label>
+                        <select name="folder" class="form-input w-full">
+                            <option value="">Sem pasta</option>
+                            <option value="vendas">Vendas</option>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="rh">RH</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Visibilidade</label>
+                        <select name="visibility" class="form-input w-full">
+                            <option value="private">Privado</option>
+                            <option value="public">Público</option>
+                            <option value="shared">Compartilhado</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="form-label">Descrição</label>
+                    <textarea name="description" class="form-input w-full h-20" placeholder="Descreva o objetivo deste relatório..."></textarea>
+                </div>
+                
+                <div>
+                    <label class="form-label">Query SQL</label>
+                    <textarea name="query" class="form-input w-full h-40 terminal-font text-sm" placeholder="SELECT * FROM tabela WHERE..." required></textarea>
+                </div>
+                
+                <div class="flex items-center justify-between pt-6 border-t border-gray-700">
+                    <button type="button" onclick="testQuery()" class="btn-secondary px-6 py-3 rounded-lg">
+                        <i class="fas fa-play mr-2"></i>Testar Query
+                    </button>
+                    <div class="space-x-3">
+                        <button type="button" onclick="ForgeReports.closeModal('newReportModal')" class="btn-secondary px-6 py-3 rounded-lg">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary px-6 py-3 rounded-lg">
+                            <i class="fas fa-save mr-2"></i>Salvar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/script.js"></script>
+    <script>
+        function testQuery() {
+            const form = document.getElementById('newReportForm');
+            const query = form.query.value;
+            const connection = form.connection.value;
+            
+            if (!query || !connection) {
+                ForgeReports.showNotification('Selecione uma conexão e digite uma query', 'error');
+                return;
+            }
+            
+            ForgeReports.showNotification('Testando query...', 'info');
+            
+            // Simular teste de query
+            setTimeout(() => {
+                ForgeReports.showNotification('Query executada com sucesso! 150 linhas retornadas.', 'success');
+            }, 2000);
+        }
+
+        document.getElementById('newReportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (ForgeReports.validateForm('newReportForm')) {
+                ForgeReports.showNotification('Relatório salvo com sucesso!', 'success');
+                ForgeReports.closeModal('newReportModal');
+                // Aqui você faria a submissão do formulário via AJAX
+            }
+        });
+    </script>
+</body>
+</html>
+
