@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForgeReports MVP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-database text-blue-600 mr-3"></i>
+                    ForgeReports MVP
+                </h1>
+                <p class="text-gray-600">Execute queries SQL Server e visualize/baixe os resultados</p>
+            </div>
+
+            <!-- Formulário Principal -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <form id="queryForm">
+                    {% csrf_token %}
+                    
+                    <!-- Conexão SQL Server -->
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-700">
+                            <i class="fas fa-server mr-2"></i>Conexão SQL Server
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Servidor</label>
+                                <input type="text" id="server" name="server" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="servidor.empresa.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Porta</label>
+                                <input type="text" id="port" name="port" value="1433"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Database</label>
+                                <input type="text" id="database" name="database" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="nome_do_banco">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Usuário</label>
+                                <input type="text" id="username" name="username" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                                <input type="password" id="password" name="password" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        
+                        <button type="button" id="testConnection" 
+                                class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200">
+                            <i class="fas fa-plug mr-2"></i>Testar Conexão
+                        </button>
+                    </div>
+
+                    <!-- Query SQL -->
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-700">
+                            <i class="fas fa-code mr-2"></i>Query SQL
+                        </h2>
+                        <textarea id="query" name="query" required rows="10"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                                  placeholder="SELECT * FROM tabela WHERE condicao = 'valor'"></textarea>
+                        <p class="text-sm text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Apenas comandos SELECT são permitidos. Exibição limitada a 1000 linhas (download sem limite).
+                        </p>
+                    </div>
+
+                    <!-- Botão Executar -->
+                    <div class="text-center">
+                        <button type="submit" id="executeQuery"
+                                class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-md text-lg font-semibold transition duration-200">
+                            <i class="fas fa-play mr-2"></i>Executar Query
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="messages" class="mb-6"></div>
+
+            <!-- Resultados -->
+            <div id="resultsSection" class="bg-white rounded-lg shadow-lg p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-700">
+                        <i class="fas fa-table mr-2"></i>Resultados
+                    </h2>
+                    <button id="downloadExcel" 
+                            class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition duration-200">
+                        <i class="fas fa-download mr-2"></i>Baixar Excel
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table id="resultsTable" class="min-w-full bg-white border border-gray-200">
+                        <thead id="tableHead" class="bg-gray-50">
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="resultsInfo" class="mt-4 text-sm text-gray-600">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQueryData = null;
+
+        // Função para mostrar mensagens
+        function showMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const alertClass = type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 
+                              type === 'success' ? 'bg-green-100 border-green-400 text-green-700' :
+                              'bg-blue-100 border-blue-400 text-blue-700';
+            
+            messagesDiv.innerHTML = `
+                <div class="${alertClass} border px-4 py-3 rounded mb-4">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                messagesDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Função para obter dados do formulário
+        function getFormData() {
+            return {
+                server: document.getElementById('server').value,
+                port: document.getElementById('port').value,
+                database: document.getElementById('database').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                query: document.getElementById('query').value
+            };
+        }
+
+        // Função para mostrar resultados em tabela
+        function showResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+            const resultsInfo = document.getElementById('resultsInfo');
+            
+            // Limpar tabela anterior
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            // Criar cabeçalho
+            const headerRow = document.createElement('tr');
+            data.columns.forEach(column => {
+                const th = document.createElement('th');
+                th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b';
+                th.textContent = column;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+            
+            // Criar linhas de dados
+            data.rows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b';
+                    td.textContent = cell === null ? '' : cell;
+                    tr.appendChild(td);
+                });
+                
+                tableBody.appendChild(tr);
+            });
+            
+            // Mostrar informações dos resultados
+            let infoText = `Registros exibidos: ${data.displayed_rows}`;
+            if (data.has_more) {
+                infoText += ` (há mais dados disponíveis - use "Baixar Excel" para obter todos)`;
+            }
+            resultsInfo.textContent = infoText;
+            
+            // Mostrar seção de resultados
+            resultsSection.classList.remove('hidden');
+            
+            // Rolar para os resultados
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Testar conexão
+        document.getElementById('testConnection').addEventListener('click', async function() {
+            const button = this;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Testando...';
+            button.disabled = true;
+
+            const connectionData = getFormData();
+
+            try {
+                const response = await fetch('/test-connection/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(connectionData)
+                });
+
+                const result = await response.json();
+                showMessage(result.message, result.success ? 'success' : 'error');
+
+            } catch (error) {
+                showMessage('Erro ao testar conexão: ' + error.message, 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        });
+
+        // Executar query
+        document.getElementById('queryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const button = document.getElementById('executeQuery');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Executando...';
+            button.disabled = true;
+
+            currentQueryData = getFormData();
+
+            try {
+                const response = await fetch('/execute-query/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(currentQueryData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    showResults(result.data);
+                } else {
+                    showMessage(result.message, 'error');
+                    document.getElementById('resultsSection').classList.add('hidden');
+                }
+
+            } catch (error) {
+                showMessage('Erro ao executar query: ' + error.message, 'error');
+                document.getElementById('resultsSection').classList.add('hidden');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        });
+
+        // Download Excel
+        document.getElementById('downloadExcel').addEventListener('click', async function() {
+            if (!currentQueryData) {
+                showMessage('Execute uma query primeiro antes de baixar.', 'error');
+                return;
+            }
+
+            const button = this;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Baixando...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/download-excel/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(currentQueryData)
+                });
+
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    const result = await response.json();
+                    showMessage(result.message, 'error');
+                } else {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'resultado.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    showMessage('Download realizado com sucesso!', 'success');
+                }
+
+            } catch (error) {
+                showMessage('Erro no download: ' + error.message, 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
