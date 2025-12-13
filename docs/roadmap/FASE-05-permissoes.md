@@ -20,252 +20,281 @@ Implementar controle de acesso: quais usuários podem ver/executar/exportar cada
 
 ## Entregas
 
-### 1. Modelo Prisma
+### 1. Modelo Django
 
-```prisma
-// Adicionar ao schema.prisma
-model Permissao {
-  id            String          @id @default(cuid())
-  relatorioId   String
-  usuarioId     String
-  nivel         NivelPermissao
-  criadoPorId   String
-  criadoEm      DateTime        @default(now())
+```python
+# apps/relatorios/models.py (adicionar)
+class Permissao(models.Model):
+    class NivelPermissao(models.TextChoices):
+        VISUALIZAR = 'VISUALIZAR', 'Visualizar'
+        EXPORTAR = 'EXPORTAR', 'Exportar'
 
-  relatorio     Relatorio       @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
-  usuario       Usuario         @relation("PermissoesRecebidas", fields: [usuarioId], references: [id])
-  criadoPor     Usuario         @relation("PermissoesCriadas", fields: [criadoPorId], references: [id])
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    relatorio = models.ForeignKey(Relatorio, on_delete=models.CASCADE, related_name='permissoes')
+    usuario = models.ForeignKey('usuarios.Usuario', on_delete=models.CASCADE, related_name='permissoes_relatorios')
+    nivel = models.CharField(max_length=20, choices=NivelPermissao.choices)
+    criado_por = models.ForeignKey('usuarios.Usuario', on_delete=models.SET_NULL, null=True, related_name='+')
+    criado_em = models.DateTimeField(auto_now_add=True)
 
-  @@unique([relatorioId, usuarioId])
-}
-
-enum NivelPermissao {
-  VISUALIZAR  // Pode ver e executar
-  EXPORTAR    // Pode ver, executar e exportar
-}
+    class Meta:
+        db_table = 'permissoes'
+        unique_together = ['relatorio', 'usuario']
 ```
 
-### 2. Atualizar Usuario e Relatorio
+### 2. Serviço de Verificação
 
-```prisma
-model Usuario {
-  // ... campos existentes
-  permissoesRecebidas  Permissao[]  @relation("PermissoesRecebidas")
-  permissoesCriadas    Permissao[]  @relation("PermissoesCriadas")
-}
+```python
+# services/permissoes.py
+from apps.relatorios.models import Permissao
 
-model Relatorio {
-  // ... campos existentes
-  permissoes           Permissao[]
-}
-```
+def verificar_permissao(relatorio_id: str, usuario) -> dict:
+    """
+    Verifica permissão do usuário no relatório.
+    Retorna {'tem_acesso': bool, 'pode_exportar': bool}
+    """
+    # Admin e Técnico sempre têm acesso total
+    if usuario.role in ['ADMIN', 'TECNICO']:
+        return {'tem_acesso': True, 'pode_exportar': True}
 
-### 3. Serviço de Verificação de Permissão
-
-```typescript
-// src/lib/permissoes/index.ts
-import { prisma } from '../db'
-import { Role, NivelPermissao } from '@prisma/client'
-
-interface PermissaoUsuario {
-  temAcesso: boolean
-  podeExportar: boolean
-}
-
-export async function verificarPermissao(
-  relatorioId: string,
-  usuarioId: string,
-  role: Role
-): Promise<PermissaoUsuario> {
-  // Admin e Técnico sempre têm acesso total
-  if (role === 'ADMIN' || role === 'TECNICO') {
-    return { temAcesso: true, podeExportar: true }
-  }
-
-  // Buscar permissão explícita
-  const permissao = await prisma.permissao.findUnique({
-    where: {
-      relatorioId_usuarioId: {
-        relatorioId,
-        usuarioId
-      }
-    }
-  })
-
-  if (!permissao) {
-    return { temAcesso: false, podeExportar: false }
-  }
-
-  return {
-    temAcesso: true,
-    podeExportar: permissao.nivel === 'EXPORTAR'
-  }
-}
-```
-
-### 4. Atualizar Listagem de Relatórios
-
-```typescript
-// src/app/api/relatorios/route.ts
-export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  }
-
-  const { empresaId, role, id: usuarioId } = session.user
-
-  let where: any = {
-    empresaId,
-    ativo: true
-  }
-
-  // Se não é Admin/Técnico, filtrar por permissão
-  if (role === 'USUARIO') {
-    where = {
-      ...where,
-      permissoes: {
-        some: {
-          usuarioId
+    # Buscar permissão explícita
+    try:
+        permissao = Permissao.objects.get(
+            relatorio_id=relatorio_id,
+            usuario=usuario
+        )
+        return {
+            'tem_acesso': True,
+            'pode_exportar': permissao.nivel == 'EXPORTAR'
         }
-      }
-    }
-  }
-
-  const relatorios = await prisma.relatorio.findMany({
-    where,
-    include: {
-      conexao: { select: { nome: true } },
-      // Incluir permissão do usuário atual
-      permissoes: {
-        where: { usuarioId },
-        select: { nivel: true }
-      }
-    }
-  })
-
-  // Mapear para incluir flag de export
-  const relatoriosComPermissao = relatorios.map(r => ({
-    ...r,
-    podeExportar: role !== 'USUARIO' || r.permissoes[0]?.nivel === 'EXPORTAR'
-  }))
-
-  return Response.json(relatoriosComPermissao)
-}
+    except Permissao.DoesNotExist:
+        return {'tem_acesso': False, 'pode_exportar': False}
 ```
 
-### 5. Proteger Execução
+### 3. Atualizar Listagem de Relatórios
+
+```python
+# apps/relatorios/views.py (modificar get_queryset)
+def get_queryset(self):
+    user = self.request.user
+    qs = Relatorio.objects.filter(empresa_id=user.empresa_id, ativo=True)
+
+    # Admin e Técnico veem todos
+    if user.role in ['ADMIN', 'TECNICO']:
+        return qs.select_related('conexao')
+
+    # Usuário só vê com permissão
+    return qs.filter(
+        permissoes__usuario=user
+    ).select_related('conexao').distinct()
+```
+
+### 4. Proteger Execução e Exportação
+
+```python
+# apps/relatorios/views.py (modificar actions)
+from services.permissoes import verificar_permissao
+
+@action(detail=True, methods=['post'])
+def executar(self, request, pk=None):
+    relatorio = self.get_object()
+
+    # Verificar permissão
+    perm = verificar_permissao(relatorio.id, request.user)
+    if not perm['tem_acesso']:
+        return Response({'error': 'Sem permissão'}, status=status.HTTP_403_FORBIDDEN)
+
+    # ... resto igual
+
+@action(detail=True, methods=['post'])
+def exportar(self, request, pk=None):
+    relatorio = self.get_object()
+
+    # Verificar permissão de exportar
+    perm = verificar_permissao(relatorio.id, request.user)
+    if not perm['pode_exportar']:
+        return Response({'error': 'Sem permissão para exportar'}, status=status.HTTP_403_FORBIDDEN)
+
+    # ... resto igual
+```
+
+### 5. API de Permissões
+
+```python
+# apps/relatorios/views.py (adicionar action)
+from core.permissions import IsAdmin
+
+@action(detail=True, methods=['get', 'post', 'delete'], permission_classes=[IsAuthenticated, IsAdmin])
+def permissoes(self, request, pk=None):
+    relatorio = self.get_object()
+
+    if request.method == 'GET':
+        perms = relatorio.permissoes.select_related('usuario')
+        data = [
+            {
+                'id': str(p.id),
+                'usuario_id': str(p.usuario_id),
+                'usuario_nome': p.usuario.nome,
+                'usuario_email': p.usuario.email,
+                'nivel': p.nivel
+            }
+            for p in perms
+        ]
+        return Response(data)
+
+    elif request.method == 'POST':
+        usuario_id = request.data.get('usuario_id')
+        nivel = request.data.get('nivel', 'VISUALIZAR')
+
+        Permissao.objects.update_or_create(
+            relatorio=relatorio,
+            usuario_id=usuario_id,
+            defaults={
+                'nivel': nivel,
+                'criado_por': request.user
+            }
+        )
+        return Response({'success': True})
+
+    elif request.method == 'DELETE':
+        usuario_id = request.data.get('usuario_id')
+        Permissao.objects.filter(
+            relatorio=relatorio,
+            usuario_id=usuario_id
+        ).delete()
+        return Response({'success': True})
+```
+
+### 6. Serializer com Permissão
+
+```python
+# apps/relatorios/serializers.py (modificar)
+class RelatorioListSerializer(serializers.ModelSerializer):
+    conexao_nome = serializers.CharField(source='conexao.nome', read_only=True)
+    pode_exportar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Relatorio
+        fields = ['id', 'nome', 'descricao', 'conexao_nome', 'pode_exportar']
+
+    def get_pode_exportar(self, obj):
+        user = self.context['request'].user
+        if user.role in ['ADMIN', 'TECNICO']:
+            return True
+        perm = obj.permissoes.filter(usuario=user).first()
+        return perm and perm.nivel == 'EXPORTAR'
+```
+
+### 7. Frontend - Gestão de Permissões
 
 ```typescript
-// src/app/api/relatorios/[id]/executar/route.ts
-export async function POST(request: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return Response.json({ error: 'Não autorizado' }, { status: 401 })
+// frontend/src/components/PermissoesForm.tsx
+import { useState, useEffect } from 'react'
+import api from '../services/api'
+
+interface Permissao {
+  id: string
+  usuario_id: string
+  usuario_nome: string
+  usuario_email: string
+  nivel: 'VISUALIZAR' | 'EXPORTAR'
+}
+
+export default function PermissoesForm({ relatorioId }: { relatorioId: string }) {
+  const [permissoes, setPermissoes] = useState<Permissao[]>([])
+  const [usuarios, setUsuarios] = useState<any[]>([])
+  const [novoUsuarioId, setNovoUsuarioId] = useState('')
+  const [novoNivel, setNovoNivel] = useState('VISUALIZAR')
+
+  useEffect(() => {
+    api.get(`/relatorios/${relatorioId}/permissoes/`).then(res => setPermissoes(res.data))
+    api.get('/usuarios/').then(res => setUsuarios(res.data))
+  }, [relatorioId])
+
+  async function adicionar() {
+    await api.post(`/relatorios/${relatorioId}/permissoes/`, {
+      usuario_id: novoUsuarioId,
+      nivel: novoNivel
+    })
+    // Recarregar
+    const res = await api.get(`/relatorios/${relatorioId}/permissoes/`)
+    setPermissoes(res.data)
   }
 
-  // Verificar permissão
-  const permissao = await verificarPermissao(
-    params.id,
-    session.user.id,
-    session.user.role
+  async function remover(usuarioId: string) {
+    await api.delete(`/relatorios/${relatorioId}/permissoes/`, {
+      data: { usuario_id: usuarioId }
+    })
+    setPermissoes(permissoes.filter(p => p.usuario_id !== usuarioId))
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-white">Permissões</h3>
+      <p className="text-slate-400 text-sm">Admin e Técnico sempre têm acesso total</p>
+
+      {/* Lista de permissões */}
+      {permissoes.map(p => (
+        <div key={p.id} className="flex items-center justify-between bg-slate-700 p-3 rounded">
+          <div>
+            <span className="text-white">{p.usuario_nome}</span>
+            <span className="text-slate-400 text-sm ml-2">({p.usuario_email})</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`px-2 py-1 rounded text-sm ${
+              p.nivel === 'EXPORTAR' ? 'bg-green-600' : 'bg-blue-600'
+            }`}>
+              {p.nivel}
+            </span>
+            <button onClick={() => remover(p.usuario_id)} className="text-red-400">
+              Remover
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* Adicionar novo */}
+      <div className="flex gap-3 mt-4">
+        <select
+          value={novoUsuarioId}
+          onChange={e => setNovoUsuarioId(e.target.value)}
+          className="bg-slate-700 p-2 rounded text-white flex-1"
+        >
+          <option value="">Selecione usuário...</option>
+          {usuarios.filter(u => u.role === 'USUARIO').map(u => (
+            <option key={u.id} value={u.id}>{u.nome}</option>
+          ))}
+        </select>
+        <select
+          value={novoNivel}
+          onChange={e => setNovoNivel(e.target.value)}
+          className="bg-slate-700 p-2 rounded text-white"
+        >
+          <option value="VISUALIZAR">Visualizar</option>
+          <option value="EXPORTAR">Exportar</option>
+        </select>
+        <button
+          onClick={adicionar}
+          disabled={!novoUsuarioId}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
+        >
+          Adicionar
+        </button>
+      </div>
+    </div>
   )
-
-  if (!permissao.temAcesso) {
-    return Response.json({ error: 'Sem permissão' }, { status: 403 })
-  }
-
-  // ... executar
 }
 ```
 
-### 6. Proteger Exportação
+### 8. Frontend - Esconder Botão Exportar
 
 ```typescript
-// src/app/api/relatorios/[id]/exportar/route.ts
-export async function POST(request: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+// frontend/src/pages/ExecutarRelatorio.tsx (modificar)
+// Adicionar prop pode_exportar ao buscar relatório
 
-  const permissao = await verificarPermissao(
-    params.id,
-    session.user.id,
-    session.user.role
-  )
-
-  if (!permissao.podeExportar) {
-    return Response.json({ error: 'Sem permissão para exportar' }, { status: 403 })
-  }
-
-  // ... exportar
-}
-```
-
-### 7. API de Permissões
-
-```typescript
-// src/app/api/relatorios/[id]/permissoes/route.ts
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  // Listar permissões do relatório
-  // Apenas Admin pode ver
-}
-
-export async function POST(request: Request, { params }: { params: { id: string } }) {
-  // Adicionar permissão
-  // Apenas Admin pode fazer
-  const { usuarioId, nivel } = await request.json()
-
-  await prisma.permissao.create({
-    data: {
-      relatorioId: params.id,
-      usuarioId,
-      nivel,
-      criadoPorId: session.user.id
-    }
-  })
-}
-
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  // Remover permissão
-  const { usuarioId } = await request.json()
-
-  await prisma.permissao.delete({
-    where: {
-      relatorioId_usuarioId: {
-        relatorioId: params.id,
-        usuarioId
-      }
-    }
-  })
-}
-```
-
-### 8. Interface - Aba Permissões no Editor
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Relatório: Vendas Diárias                               │
-│ [Dados] [Filtros] [Permissões]                          │
-├─────────────────────────────────────────────────────────┤
-│                                   [+ Adicionar Usuário] │
-│                                                         │
-│ Usuário         │ Nível      │ Ações                   │
-│ Maria Santos    │ Exportar   │ [Alterar] [Remover]     │
-│ Pedro Lima      │ Visualizar │ [Alterar] [Remover]     │
-│                                                         │
-│ ℹ️ Admin e Técnico sempre têm acesso total              │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 9. Interface - Esconder Botão Exportar
-
-Na tela de execução, esconder botão "Exportar Excel" se usuário não tem permissão.
-
-```tsx
-{podeExportar && (
-  <button onClick={handleExportar}>Exportar Excel</button>
+{resultado?.sucesso && relatorio.pode_exportar && (
+  <button onClick={exportar} className="bg-blue-600 text-white px-4 py-2 rounded">
+    Exportar Excel
+  </button>
 )}
 ```
 
@@ -273,15 +302,13 @@ Na tela de execução, esconder botão "Exportar Excel" se usuário não tem per
 
 | Arquivo | Ação |
 |---------|------|
-| `prisma/schema.prisma` | Modificar (add Permissao) |
-| `src/lib/permissoes/index.ts` | Criar |
-| `src/app/api/relatorios/route.ts` | Modificar (filtrar por permissão) |
-| `src/app/api/relatorios/[id]/executar/route.ts` | Modificar (verificar permissão) |
-| `src/app/api/relatorios/[id]/exportar/route.ts` | Modificar (verificar permissão) |
-| `src/app/api/relatorios/[id]/permissoes/route.ts` | Criar |
-| `src/app/(dashboard)/relatorios/[id]/page.tsx` | Modificar (add aba permissões) |
-| `src/components/features/permissoes-form.tsx` | Criar |
-| `src/app/(dashboard)/relatorios/[id]/executar/page.tsx` | Modificar (esconder export) |
+| `backend/apps/relatorios/models.py` | Modificar (add Permissao) |
+| `backend/services/permissoes.py` | Criar |
+| `backend/apps/relatorios/views.py` | Modificar |
+| `backend/apps/relatorios/serializers.py` | Modificar |
+| `frontend/src/components/PermissoesForm.tsx` | Criar |
+| `frontend/src/pages/ExecutarRelatorio.tsx` | Modificar |
+| `frontend/src/pages/RelatorioForm.tsx` | Modificar (add tab) |
 
 ## Critérios de Conclusão
 
@@ -298,28 +325,16 @@ Na tela de execução, esconder botão "Exportar Excel" se usuário não tem per
 ## Testes Manuais
 
 ```bash
-# Preparação
-1. Criar 2 usuários: Maria (Usuário) e Pedro (Usuário)
-2. Criar relatório "Vendas"
-
-# Teste permissão
-3. Logar como Maria
-4. Verificar que não vê "Vendas" na lista
-5. Logar como Admin
-6. Adicionar Maria com permissão "Visualizar"
-7. Logar como Maria
-8. Verificar que vê "Vendas"
-9. Executar funciona
-10. Botão Exportar não aparece
-11. Logar como Admin
-12. Alterar Maria para "Exportar"
-13. Logar como Maria
-14. Botão Exportar aparece
-15. Exportar funciona
+# 1. Criar usuário "Maria" (role: USUARIO)
+# 2. Criar relatório "Vendas"
+# 3. Logar como Maria
+# 4. Verificar que NÃO vê "Vendas"
+# 5. Logar como Admin
+# 6. Adicionar Maria com permissão "Visualizar"
+# 7. Logar como Maria
+# 8. Verificar que VÊ "Vendas"
+# 9. Executar funciona
+# 10. Botão Exportar NÃO aparece
+# 11. Admin altera Maria para "Exportar"
+# 12. Maria agora vê botão e consegue exportar
 ```
-
-## Notas
-
-- Permissão é por relatório, não por pasta (simplificação)
-- Fase futura pode adicionar permissão por pasta
-- Considerar cache de permissões se performance for problema

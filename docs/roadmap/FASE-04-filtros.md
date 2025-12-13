@@ -20,289 +20,291 @@ Adicionar filtros dinâmicos aos relatórios (parâmetros que o usuário preench
 
 ## Entregas
 
-### 1. Modelo Prisma
+### 1. Modelo Django
 
-```prisma
-// Adicionar ao schema.prisma
-model Filtro {
-  id            String      @id @default(cuid())
-  relatorioId   String
-  parametro     String      // @data_inicio
-  label         String      // "Data Início"
-  tipo          TipoFiltro
-  obrigatorio   Boolean     @default(false)
-  valorPadrao   String?
-  opcoes        String?     // JSON para tipo LISTA: ["op1", "op2"]
-  ordem         Int         @default(0)
-  criadoEm      DateTime    @default(now())
-  atualizadoEm  DateTime    @updatedAt
+```python
+# apps/relatorios/models.py (adicionar)
+class Filtro(models.Model):
+    class TipoFiltro(models.TextChoices):
+        DATA = 'DATA', 'Data'
+        TEXTO = 'TEXTO', 'Texto'
+        NUMERO = 'NUMERO', 'Número'
+        LISTA = 'LISTA', 'Lista'
 
-  relatorio     Relatorio   @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    relatorio = models.ForeignKey(Relatorio, on_delete=models.CASCADE, related_name='filtros')
+    parametro = models.CharField(max_length=100)  # @data_inicio
+    label = models.CharField(max_length=255)      # "Data Início"
+    tipo = models.CharField(max_length=20, choices=TipoFiltro.choices)
+    obrigatorio = models.BooleanField(default=False)
+    valor_padrao = models.CharField(max_length=255, blank=True)
+    opcoes = models.JSONField(null=True, blank=True)  # Para tipo LISTA
+    ordem = models.IntegerField(default=0)
 
-  @@unique([relatorioId, parametro])
-}
-
-enum TipoFiltro {
-  DATA
-  TEXTO
-  NUMERO
-  LISTA
-}
+    class Meta:
+        db_table = 'filtros'
+        unique_together = ['relatorio', 'parametro']
+        ordering = ['ordem']
 ```
 
-### 2. Atualizar Relatorio
+### 2. Serviço de Substituição de Parâmetros
 
-```prisma
-model Relatorio {
-  // ... campos existentes
-  filtros       Filtro[]
-}
+```python
+# services/query_params.py
+from datetime import datetime, date
+import re
+
+def substituir_parametros(query: str, filtros: list, valores: dict) -> tuple[str, str | None]:
+    """
+    Substitui placeholders na query pelos valores dos filtros.
+    Retorna (query_final, erro) - erro é None se sucesso.
+    """
+    query_final = query
+
+    for filtro in filtros:
+        param = filtro.parametro
+        valor = valores.get(param)
+
+        # Validar obrigatórios
+        if filtro.obrigatorio and not valor:
+            return '', f'Filtro "{filtro.label}" é obrigatório'
+
+        # Formatar valor
+        valor_formatado = formatar_valor(valor, filtro.tipo)
+
+        # Substituir na query
+        query_final = query_final.replace(param, valor_formatado)
+
+    return query_final, None
+
+
+def formatar_valor(valor, tipo: str) -> str:
+    """Formata valor para uso seguro em SQL"""
+    if valor is None or valor == '':
+        return 'NULL'
+
+    if tipo == 'DATA':
+        # Aceita string ISO ou objeto date/datetime
+        if isinstance(valor, (date, datetime)):
+            return f"'{valor.strftime('%Y-%m-%d')}'"
+        return f"'{valor}'"
+
+    elif tipo == 'TEXTO' or tipo == 'LISTA':
+        # Escapar aspas simples
+        valor_escapado = str(valor).replace("'", "''")
+        return f"'{valor_escapado}'"
+
+    elif tipo == 'NUMERO':
+        return str(float(valor))
+
+    return f"'{str(valor)}'"
 ```
 
-### 3. API de Filtros
+### 3. Atualizar Query Executor
+
+```python
+# services/query_executor.py (modificar)
+from services.query_params import substituir_parametros
+
+class QueryExecutor:
+    def executar(self, usuario, filtros_valores: dict = None, limite: int = None) -> dict:
+        inicio = datetime.now()
+        limite = limite or self.relatorio.limite_linhas_tela
+
+        # Buscar filtros do relatório
+        filtros = list(self.relatorio.filtros.all())
+
+        # Substituir parâmetros se houver filtros
+        query = self.relatorio.query_sql
+        if filtros and filtros_valores:
+            query, erro = substituir_parametros(query, filtros, filtros_valores)
+            if erro:
+                return {'sucesso': False, 'erro': erro}
+
+        # Criar registro de execução
+        execucao = Execucao.objects.create(
+            empresa=self.relatorio.empresa,
+            relatorio=self.relatorio,
+            usuario=usuario,
+            filtros_usados=filtros_valores
+        )
+
+        try:
+            conn = self.connector.get_connection()
+            df = pd.read_sql(query, conn)
+            conn.close()
+            # ... resto igual
+```
+
+### 4. Serializers
+
+```python
+# apps/relatorios/serializers.py (adicionar)
+class FiltroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Filtro
+        fields = ['id', 'parametro', 'label', 'tipo', 'obrigatorio', 'valor_padrao', 'opcoes', 'ordem']
+        read_only_fields = ['id']
+
+
+class RelatorioComFiltrosSerializer(RelatorioSerializer):
+    filtros = FiltroSerializer(many=True, read_only=True)
+
+    class Meta(RelatorioSerializer.Meta):
+        fields = RelatorioSerializer.Meta.fields + ['filtros']
+
+
+class SalvarFiltrosSerializer(serializers.Serializer):
+    filtros = FiltroSerializer(many=True)
+
+    def save(self, relatorio):
+        # Deletar filtros existentes
+        relatorio.filtros.all().delete()
+
+        # Criar novos
+        for i, filtro_data in enumerate(self.validated_data['filtros']):
+            Filtro.objects.create(
+                relatorio=relatorio,
+                ordem=i,
+                **filtro_data
+            )
+```
+
+### 5. Views
+
+```python
+# apps/relatorios/views.py (adicionar action)
+@action(detail=True, methods=['get', 'put'])
+def filtros(self, request, pk=None):
+    relatorio = self.get_object()
+
+    if request.method == 'GET':
+        serializer = FiltroSerializer(relatorio.filtros.all(), many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = SalvarFiltrosSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(relatorio)
+        return Response({'success': True})
+```
+
+### 6. Frontend - Form de Filtros (edição)
 
 ```typescript
-// src/app/api/relatorios/[id]/filtros/route.ts
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { z } from 'zod'
-
-const filtroSchema = z.object({
-  parametro: z.string().min(1),
-  label: z.string().min(1),
-  tipo: z.enum(['DATA', 'TEXTO', 'NUMERO', 'LISTA']),
-  obrigatorio: z.boolean(),
-  valorPadrao: z.string().optional(),
-  opcoes: z.array(z.string()).optional(),
-  ordem: z.number().int()
-})
-
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  }
-
-  const filtros = await prisma.filtro.findMany({
-    where: {
-      relatorioId: params.id,
-      relatorio: { empresaId: session.user.empresaId }
-    },
-    orderBy: { ordem: 'asc' }
-  })
-
-  return Response.json(filtros)
-}
-
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const session = await getServerSession(authOptions)
-  if (!session || !['ADMIN', 'TECNICO'].includes(session.user.role)) {
-    return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  }
-
-  const body = await request.json()
-  const filtros = z.array(filtroSchema).parse(body)
-
-  // Deletar filtros existentes e recriar
-  await prisma.filtro.deleteMany({
-    where: { relatorioId: params.id }
-  })
-
-  await prisma.filtro.createMany({
-    data: filtros.map(f => ({
-      relatorioId: params.id,
-      parametro: f.parametro,
-      label: f.label,
-      tipo: f.tipo,
-      obrigatorio: f.obrigatorio,
-      valorPadrao: f.valorPadrao || null,
-      opcoes: f.opcoes ? JSON.stringify(f.opcoes) : null,
-      ordem: f.ordem
-    }))
-  })
-
-  return Response.json({ success: true })
-}
-```
-
-### 4. Substituição de Parâmetros
-
-```typescript
-// src/lib/relatorios/parametros.ts
-import { TipoFiltro } from '@prisma/client'
-
+// frontend/src/components/FiltroForm.tsx
 interface Filtro {
   parametro: string
-  tipo: TipoFiltro
+  label: string
+  tipo: 'DATA' | 'TEXTO' | 'NUMERO' | 'LISTA'
   obrigatorio: boolean
+  valor_padrao?: string
+  opcoes?: string[]
 }
 
-interface ValoresFiltros {
-  [parametro: string]: string | number | Date | null
-}
-
-export function substituirParametros(
-  query: string,
-  filtros: Filtro[],
-  valores: ValoresFiltros
-): { query: string; erro?: string } {
-  let queryFinal = query
-
-  for (const filtro of filtros) {
-    const valor = valores[filtro.parametro]
-
-    // Validar obrigatórios
-    if (filtro.obrigatorio && (valor === null || valor === undefined || valor === '')) {
-      return { query: '', erro: `Filtro ${filtro.parametro} é obrigatório` }
-    }
-
-    // Substituir na query
-    const placeholder = filtro.parametro // @data_inicio
-    let valorFormatado: string
-
-    if (valor === null || valor === undefined || valor === '') {
-      valorFormatado = 'NULL'
-    } else if (filtro.tipo === 'DATA') {
-      valorFormatado = `'${formatarData(valor)}'`
-    } else if (filtro.tipo === 'TEXTO') {
-      valorFormatado = `'${escaparString(String(valor))}'`
-    } else if (filtro.tipo === 'NUMERO') {
-      valorFormatado = String(Number(valor))
-    } else if (filtro.tipo === 'LISTA') {
-      valorFormatado = `'${escaparString(String(valor))}'`
-    } else {
-      valorFormatado = `'${escaparString(String(valor))}'`
-    }
-
-    queryFinal = queryFinal.replace(
-      new RegExp(placeholder, 'g'),
-      valorFormatado
-    )
-  }
-
-  return { query: queryFinal }
-}
-
-function formatarData(valor: any): string {
-  const data = new Date(valor)
-  return data.toISOString().split('T')[0] // YYYY-MM-DD
-}
-
-function escaparString(valor: string): string {
-  return valor.replace(/'/g, "''")
+export default function FiltroForm({ filtros, onChange }: Props) {
+  return (
+    <div className="space-y-4">
+      {filtros.map((filtro, idx) => (
+        <div key={idx} className="bg-slate-700 p-4 rounded flex gap-4 items-center">
+          <input
+            value={filtro.parametro}
+            placeholder="@parametro"
+            onChange={e => updateFiltro(idx, 'parametro', e.target.value)}
+            className="bg-slate-600 p-2 rounded text-white w-32"
+          />
+          <input
+            value={filtro.label}
+            placeholder="Label"
+            onChange={e => updateFiltro(idx, 'label', e.target.value)}
+            className="bg-slate-600 p-2 rounded text-white flex-1"
+          />
+          <select
+            value={filtro.tipo}
+            onChange={e => updateFiltro(idx, 'tipo', e.target.value)}
+            className="bg-slate-600 p-2 rounded text-white"
+          >
+            <option value="DATA">Data</option>
+            <option value="TEXTO">Texto</option>
+            <option value="NUMERO">Número</option>
+            <option value="LISTA">Lista</option>
+          </select>
+          <label className="text-white flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={filtro.obrigatorio}
+              onChange={e => updateFiltro(idx, 'obrigatorio', e.target.checked)}
+            />
+            Obrigatório
+          </label>
+          <button onClick={() => removerFiltro(idx)} className="text-red-400">
+            Remover
+          </button>
+        </div>
+      ))}
+      <button onClick={adicionarFiltro} className="text-purple-400">
+        + Adicionar Filtro
+      </button>
+    </div>
+  )
 }
 ```
 
-### 5. Atualizar Execução
+### 7. Frontend - Input de Filtros (execução)
 
 ```typescript
-// src/lib/relatorios/executar.ts
-export async function executarRelatorio(
-  relatorioId: string,
-  usuarioId: string,
-  empresaId: string,
-  valoresFiltros?: ValoresFiltros, // NOVO
-  limite?: number
-): Promise<ResultadoExecucao> {
-  // ...
-
-  // Buscar filtros do relatório
-  const filtros = await prisma.filtro.findMany({
-    where: { relatorioId }
-  })
-
-  // Substituir parâmetros
-  let queryFinal = relatorio.querySql
-  if (filtros.length > 0 && valoresFiltros) {
-    const resultado = substituirParametros(queryFinal, filtros, valoresFiltros)
-    if (resultado.erro) {
-      return { sucesso: false, erro: resultado.erro }
-    }
-    queryFinal = resultado.query
-  }
-
-  // Criar execução com filtros usados
-  const execucao = await prisma.execucao.create({
-    data: {
-      empresaId,
-      relatorioId,
-      usuarioId,
-      filtrosUsados: valoresFiltros ? JSON.stringify(valoresFiltros) : null,
-      iniciadoEm: new Date()
-    }
-  })
-
-  // ... resto da execução
-}
-```
-
-### 6. Interface - Aba Filtros no Editor
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Relatório: Vendas por Período                           │
-│ [Dados] [Filtros]                                       │
-├─────────────────────────────────────────────────────────┤
-│                                    [+ Adicionar Filtro] │
-│                                                         │
-│ ☰ │ @data_inicio │ Data Início │ Data   │ Obrigatório │
-│ ☰ │ @data_fim    │ Data Fim    │ Data   │ Obrigatório │
-│ ☰ │ @vendedor    │ Vendedor    │ Lista  │ Opcional    │
-│                                                         │
-│                                           [Salvar]      │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 7. Interface - Filtros na Execução
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ ← Voltar                          Vendas por Período    │
-├─────────────────────────────────────────────────────────┤
-│ Filtros:                                                │
-│ Data Início*: [    📅    ] Data Fim*: [    📅    ]     │
-│ Vendedor:     [Selecione... ▼]                          │
-│                                                         │
-│                                          [Executar]     │
-├─────────────────────────────────────────────────────────┤
-│ (resultado aparece aqui após executar)                  │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 8. Componentes de Input por Tipo
-
-```typescript
-// src/components/features/filtro-input.tsx
-interface FiltroInputProps {
+// frontend/src/components/FiltroInput.tsx
+interface Props {
   filtro: Filtro
-  valor: any
-  onChange: (valor: any) => void
+  value: any
+  onChange: (value: any) => void
 }
 
-export function FiltroInput({ filtro, valor, onChange }: FiltroInputProps) {
+export default function FiltroInput({ filtro, value, onChange }: Props) {
   switch (filtro.tipo) {
     case 'DATA':
-      return <input type="date" value={valor} onChange={e => onChange(e.target.value)} />
+      return (
+        <input
+          type="date"
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          className="bg-slate-700 p-2 rounded text-white"
+          required={filtro.obrigatorio}
+        />
+      )
 
     case 'TEXTO':
-      return <input type="text" value={valor} onChange={e => onChange(e.target.value)} />
+      return (
+        <input
+          type="text"
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          className="bg-slate-700 p-2 rounded text-white"
+          required={filtro.obrigatorio}
+        />
+      )
 
     case 'NUMERO':
-      return <input type="number" value={valor} onChange={e => onChange(e.target.value)} />
+      return (
+        <input
+          type="number"
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          className="bg-slate-700 p-2 rounded text-white"
+          required={filtro.obrigatorio}
+        />
+      )
 
     case 'LISTA':
-      const opcoes = JSON.parse(filtro.opcoes || '[]')
       return (
-        <select value={valor} onChange={e => onChange(e.target.value)}>
+        <select
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          className="bg-slate-700 p-2 rounded text-white"
+          required={filtro.obrigatorio}
+        >
           <option value="">Selecione...</option>
-          {opcoes.map((op: string) => (
+          {(filtro.opcoes || []).map(op => (
             <option key={op} value={op}>{op}</option>
           ))}
         </select>
@@ -315,15 +317,14 @@ export function FiltroInput({ filtro, valor, onChange }: FiltroInputProps) {
 
 | Arquivo | Ação |
 |---------|------|
-| `prisma/schema.prisma` | Modificar (add Filtro) |
-| `src/lib/relatorios/parametros.ts` | Criar |
-| `src/lib/relatorios/executar.ts` | Modificar |
-| `src/app/api/relatorios/[id]/filtros/route.ts` | Criar |
-| `src/app/api/relatorios/[id]/executar/route.ts` | Modificar |
-| `src/components/features/filtro-form.tsx` | Criar |
-| `src/components/features/filtro-input.tsx` | Criar |
-| `src/app/(dashboard)/relatorios/[id]/page.tsx` | Modificar (add aba filtros) |
-| `src/app/(dashboard)/relatorios/[id]/executar/page.tsx` | Modificar (add inputs) |
+| `backend/apps/relatorios/models.py` | Modificar (add Filtro) |
+| `backend/services/query_params.py` | Criar |
+| `backend/services/query_executor.py` | Modificar |
+| `backend/apps/relatorios/serializers.py` | Modificar |
+| `backend/apps/relatorios/views.py` | Modificar |
+| `frontend/src/components/FiltroForm.tsx` | Criar |
+| `frontend/src/components/FiltroInput.tsx` | Criar |
+| `frontend/src/pages/ExecutarRelatorio.tsx` | Modificar |
 
 ## Critérios de Conclusão
 
@@ -336,25 +337,17 @@ export function FiltroInput({ filtro, valor, onChange }: FiltroInputProps) {
 - [ ] Filtro obrigatório valida antes de executar
 - [ ] Valores são substituídos na query corretamente
 - [ ] Filtros usados são salvos na execução
-- [ ] Valor padrão preenche automaticamente
 
 ## Testes Manuais
 
 ```bash
 # 1. Editar relatório existente
-# 2. Ir na aba Filtros
-# 3. Adicionar filtro @data (tipo Data, obrigatório)
-# 4. Adicionar filtro @status (tipo Lista: ["Ativo", "Inativo"])
-# 5. Salvar
-# 6. Ir para Executar
-# 7. Ver inputs de filtro
-# 8. Tentar executar sem preencher data (deve dar erro)
-# 9. Preencher e executar
-# 10. Verificar que query executou com valores corretos
+# 2. Adicionar filtro @data_inicio (Data, obrigatório)
+# 3. Adicionar filtro @status (Lista: ["Ativo", "Inativo"])
+# 4. Salvar
+# 5. Executar relatório
+# 6. Ver inputs de filtro
+# 7. Tentar executar sem preencher data (deve dar erro)
+# 8. Preencher e executar
+# 9. Verificar resultado correto
 ```
-
-## Notas
-
-- SQL Injection: usar escape de strings, não prepared statements ainda
-- Prepared statements seria mais seguro, mas complexidade maior
-- Fase futura pode melhorar segurança com parameterized queries

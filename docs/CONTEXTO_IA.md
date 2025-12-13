@@ -32,6 +32,37 @@ Não carregue todos os documentos. Cada arquivo é auto-contido.
 | Detalhes de uma feature | `casos-de-uso/UC0X-*.md` |
 | O que implementar agora | `roadmap/FASE-XX-*.md` |
 
+## Stack do Projeto
+
+| Camada | Tecnologia |
+|--------|------------|
+| **Backend** | Django + Django REST Framework |
+| **Auth** | JWT (SimpleJWT) |
+| **Banco Sistema** | PostgreSQL |
+| **Dados** | pandas, pyodbc, psycopg2 |
+| **Frontend** | React + Vite + TypeScript |
+| **Estilo** | Tailwind CSS |
+
+## Estrutura de Pastas
+
+```
+CForgeReports/
+├── backend/           # Django API
+│   ├── config/        # Settings, URLs
+│   ├── apps/          # Django apps (empresas, usuarios, conexoes, relatorios)
+│   ├── core/          # Utils compartilhados
+│   └── services/      # Lógica de negócio
+├── frontend/          # React SPA
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   └── contexts/
+├── docs/              # Esta documentação
+├── forgereports/      # MVP (referência)
+└── forge-reports-standalone/  # Protótipo UI (referência)
+```
+
 ## Estrutura dos Arquivos de Fase
 
 Cada arquivo de fase (`roadmap/FASE-XX-*.md`) contém:
@@ -46,16 +77,13 @@ Cada arquivo de fase (`roadmap/FASE-XX-*.md`) contém:
 (o que já existe antes dessa fase)
 
 ## Entregas
-(lista do que implementar)
+(código de exemplo para implementar)
 
 ## Critérios de Conclusão
 (como saber que terminou)
 
 ## Arquivos a Criar/Modificar
 (lista específica de arquivos)
-
-## Dependências
-(o que precisa estar pronto antes)
 ```
 
 ## Estrutura dos Casos de Uso
@@ -71,25 +99,38 @@ Cada arquivo de caso de uso (`casos-de-uso/UC0X-*.md`) contém:
 ## Ator
 (quem executa)
 
-## Pré-condições
-(o que precisa existir antes)
-
 ## Fluxo Principal
 (passos numerados)
 
 ## Regras de Negócio
 (validações, restrições)
-
-## Modelo de Dados
-(campos relevantes)
 ```
 
 ## Convenções do Projeto
 
-### Nomenclatura de Arquivos
-- Casos de uso: `UC01-nome-kebab-case.md`
-- Fases: `FASE-01-nome-kebab-case.md`
-- Código: seguir padrão da linguagem
+### Backend (Python)
+```python
+# Arquivos: snake_case
+# query_executor.py
+
+# Classes: PascalCase
+# class QueryExecutor:
+
+# Funções: snake_case
+# def execute_query():
+```
+
+### Frontend (TypeScript)
+```typescript
+// Arquivos: kebab-case ou PascalCase para componentes
+// ConexaoForm.tsx
+
+// Componentes: PascalCase
+// function ConexaoForm() {}
+
+// Funções: camelCase
+// async function fetchConexoes() {}
+```
 
 ### Commits
 ```
@@ -99,18 +140,13 @@ Tipos: feat, fix, docs, refactor, test
 Exemplo: feat: implementa login de usuário
 ```
 
-### Branches
-```
-feature/fase-XX-nome
-fix/descricao-curta
-```
-
 ## Contexto do Código Existente
 
 ### MVP Django (`forgereports/`)
-- Funcional mas não usar como base
-- Serve como referência de como conectar em SQL Server
-- Código em: `forgereports/reports/views.py`
+- **Funcional** - usar como referência!
+- Código de conexão SQL Server funciona
+- Export Excel funciona
+- Ver: `forgereports/reports/views.py`
 
 ### Protótipo UI (`forge-reports-standalone/`)
 - Apenas visual, não funciona
@@ -123,8 +159,55 @@ fix/descricao-curta
 
 ## Regras de Desenvolvimento
 
-1. **Não over-engineer** - Implementar apenas o que a fase pede
-2. **Testes** - Cada feature deve ter teste básico
+1. **Aproveitar o MVP** - Código de conexão/query já existe
+2. **Não over-engineer** - Implementar apenas o que a fase pede
 3. **Isolamento** - Toda query filtra por `empresa_id`
 4. **Segurança** - Queries são SELECT only, senhas criptografadas
 5. **Commits pequenos** - Um commit por entrega lógica
+
+## Padrões de API
+
+### Views (Django REST Framework)
+```python
+class ConexaoViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
+    serializer_class = ConexaoSerializer
+    permission_classes = [IsAuthenticated, IsTecnicoOrAdmin]
+
+    def get_queryset(self):
+        return Conexao.objects.filter(empresa_id=self.request.user.empresa_id)
+```
+
+### Respostas de Erro
+```python
+return Response(
+    {'error': 'Mensagem amigável', 'code': 'CODIGO_ERRO'},
+    status=status.HTTP_400_BAD_REQUEST
+)
+```
+
+### Frontend - Chamadas API
+```typescript
+try {
+  const response = await api.get('/conexoes/')
+  setConexoes(response.data)
+} catch (err) {
+  setError('Erro ao carregar conexões')
+}
+```
+
+## Variáveis de Ambiente
+
+### Backend
+```env
+DEBUG=True
+SECRET_KEY=chave-secreta
+DB_NAME=forgereports
+DB_USER=postgres
+DB_PASSWORD=senha
+ENCRYPTION_KEY=chave-para-criptografia
+```
+
+### Frontend
+```env
+VITE_API_URL=http://localhost:8000/api
+```

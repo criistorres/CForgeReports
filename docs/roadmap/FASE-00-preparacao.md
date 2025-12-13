@@ -2,13 +2,13 @@
 
 ## Objetivo
 
-Estruturar o projeto Next.js com todas as dependências e configurações base.
+Estruturar o projeto Django (backend) + React (frontend) com todas as dependências e configurações base.
 
 ## Contexto
 
-- Projeto começa do zero
-- MVP Django existe mas não será usado como base
+- MVP Django existe e será usado como referência
 - Protótipo UI existe para referência de design
+- Vamos criar estrutura profissional separando backend/frontend
 
 ## Dependências
 
@@ -16,184 +16,323 @@ Nenhuma (primeira fase)
 
 ## Entregas
 
-### 1. Criar projeto Next.js
+### 1. Criar estrutura de pastas
 
 ```bash
-npx create-next-app@latest forge-reports --typescript --tailwind --eslint --app --src-dir
+mkdir -p backend frontend
 ```
 
-### 2. Instalar dependências
+### 2. Configurar Backend Django
 
 ```bash
-# ORM e banco
-npm install prisma @prisma/client
+cd backend
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou: venv\Scripts\activate  # Windows
 
-# Autenticação
-npm install next-auth
+pip install django djangorestframework djangorestframework-simplejwt
+pip install django-cors-headers python-dotenv
+pip install psycopg2-binary pyodbc pandas openpyxl
+pip install cryptography
 
-# Conexões externas
-npm install mssql pg mysql2
-
-# Utilitários
-npm install bcryptjs
-npm install zod  # validação
-npm install xlsx  # export excel
-
-# Dev
-npm install -D @types/bcryptjs @types/mssql
+django-admin startproject config .
 ```
 
-### 3. Configurar Prisma
+### 3. Criar apps Django
 
 ```bash
-npx prisma init
+cd backend
+python manage.py startapp empresas
+python manage.py startapp usuarios
+python manage.py startapp conexoes
+python manage.py startapp relatorios
+python manage.py startapp execucoes
 ```
 
-Criar schema inicial com modelo Empresa e Usuario.
+### 4. Estrutura do Backend
 
-### 4. Configurar variáveis de ambiente
+```
+backend/
+├── config/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── apps/
+│   ├── empresas/
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   └── urls.py
+│   ├── usuarios/
+│   ├── conexoes/
+│   ├── relatorios/
+│   └── execucoes/
+├── core/
+│   ├── __init__.py
+│   ├── permissions.py
+│   ├── mixins.py
+│   └── crypto.py
+├── services/
+│   ├── __init__.py
+│   ├── database_connector.py
+│   ├── query_executor.py
+│   └── excel_exporter.py
+├── manage.py
+├── requirements.txt
+└── .env.example
+```
+
+### 5. Configurar settings.py
+
+```python
+# config/settings.py
+from pathlib import Path
+from datetime import timedelta
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Third party
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    # Local apps
+    'apps.empresas',
+    'apps.usuarios',
+    'apps.conexoes',
+    'apps.relatorios',
+    'apps.execucoes',
+]
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+]
+
+# CORS
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+# JWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+# Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'forgereports'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
+}
+
+# Custom user model
+AUTH_USER_MODEL = 'usuarios.Usuario'
+
+# Internationalization
+LANGUAGE_CODE = 'pt-br'
+TIME_ZONE = 'America/Sao_Paulo'
+
+# Encryption
+ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', '')
+```
+
+### 6. Criar requirements.txt
+
+```
+# backend/requirements.txt
+Django>=4.2
+djangorestframework>=3.14
+djangorestframework-simplejwt>=5.3
+django-cors-headers>=4.3
+psycopg2-binary>=2.9
+pyodbc>=5.0
+pandas>=2.0
+openpyxl>=3.1
+python-dotenv>=1.0
+cryptography>=41.0
+```
+
+### 7. Criar .env.example
 
 ```env
-# .env.example
-DATABASE_URL="postgresql://user:pass@localhost:5432/forgereports"
-NEXTAUTH_SECRET="gerar-secret-seguro"
-NEXTAUTH_URL="http://localhost:3000"
-ENCRYPTION_KEY="gerar-chave-32-bytes"
+# backend/.env.example
+DEBUG=True
+SECRET_KEY=sua-chave-secreta-aqui
+DB_NAME=forgereports
+DB_USER=postgres
+DB_PASSWORD=sua-senha
+DB_HOST=localhost
+DB_PORT=5432
+ENCRYPTION_KEY=chave-32-bytes-em-hex
 ```
 
-### 5. Estrutura de pastas
+### 8. Configurar Frontend React
 
-```
-forge-reports/
-├── src/
-│   ├── app/
-│   │   ├── (auth)/
-│   │   │   └── login/
-│   │   │       └── page.tsx
-│   │   ├── (dashboard)/
-│   │   │   └── page.tsx
-│   │   ├── api/
-│   │   │   └── auth/
-│   │   │       └── [...nextauth]/
-│   │   │           └── route.ts
-│   │   ├── layout.tsx
-│   │   └── globals.css
-│   ├── components/
-│   │   └── ui/
-│   │       └── button.tsx
-│   ├── lib/
-│   │   ├── db.ts
-│   │   └── auth.ts
-│   └── types/
-│       └── index.ts
-├── prisma/
-│   └── schema.prisma
-├── .env.example
-├── .env.local
-└── package.json
-```
-
-### 6. Schema Prisma inicial
-
-```prisma
-// prisma/schema.prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model Empresa {
-  id            String    @id @default(cuid())
-  nome          String
-  slug          String    @unique
-  ativo         Boolean   @default(true)
-  maxUsuarios   Int       @default(10)
-  maxConexoes   Int       @default(5)
-  maxRelatorios Int       @default(50)
-  criadoEm      DateTime  @default(now())
-  atualizadoEm  DateTime  @updatedAt
-
-  usuarios      Usuario[]
-}
-
-model Usuario {
-  id           String    @id @default(cuid())
-  empresaId    String
-  nome         String
-  email        String
-  senhaHash    String?
-  role         Role      @default(USUARIO)
-  ativo        Boolean   @default(true)
-  ativadoEm    DateTime?
-  criadoEm     DateTime  @default(now())
-  atualizadoEm DateTime  @updatedAt
-
-  empresa      Empresa   @relation(fields: [empresaId], references: [id])
-
-  @@unique([empresaId, email])
-}
-
-enum Role {
-  ADMIN
-  TECNICO
-  USUARIO
-}
-```
-
-### 7. Configurar Tailwind
-
-Garantir que Tailwind está configurado com:
-- Dark mode (class strategy)
-- Cores customizadas (purple, slate do protótipo)
-
-### 8. Componente UI base
-
-Criar pelo menos:
-- Button
-- Input
-- Card
-
-Pode usar shadcn/ui:
 ```bash
-npx shadcn-ui@latest init
-npx shadcn-ui@latest add button input card
+cd frontend
+npm create vite@latest . -- --template react-ts
+npm install
+npm install axios react-router-dom @tanstack/react-query
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+### 9. Estrutura do Frontend
+
+```
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── ui/
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   └── Card.tsx
+│   │   └── features/
+│   ├── pages/
+│   │   ├── Login.tsx
+│   │   └── Dashboard.tsx
+│   ├── services/
+│   │   └── api.ts
+│   ├── contexts/
+│   │   └── AuthContext.tsx
+│   ├── hooks/
+│   ├── types/
+│   │   └── index.ts
+│   ├── App.tsx
+│   └── main.tsx
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── tsconfig.json
+└── vite.config.ts
+```
+
+### 10. Configurar Tailwind
+
+```javascript
+// frontend/tailwind.config.js
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          500: '#8b5cf6',
+          600: '#7c3aed',
+          700: '#6d28d9',
+        }
+      }
+    },
+  },
+  plugins: [],
+}
+```
+
+### 11. Configurar API Client
+
+```typescript
+// frontend/src/services/api.ts
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+export default api
+```
+
+### 12. Criar .env frontend
+
+```env
+# frontend/.env
+VITE_API_URL=http://localhost:8000/api
 ```
 
 ## Arquivos a Criar
 
 | Arquivo | Descrição |
 |---------|-----------|
-| `forge-reports/` | Novo diretório do projeto |
-| `prisma/schema.prisma` | Schema do banco |
-| `.env.example` | Template de variáveis |
-| `src/lib/db.ts` | Cliente Prisma |
-| `src/app/layout.tsx` | Layout raiz |
-| `src/app/page.tsx` | Página inicial (redirect para login) |
+| `backend/` | Diretório do projeto Django |
+| `backend/config/settings.py` | Configurações Django |
+| `backend/requirements.txt` | Dependências Python |
+| `backend/.env.example` | Template de variáveis |
+| `frontend/` | Diretório do projeto React |
+| `frontend/src/services/api.ts` | Cliente HTTP |
+| `frontend/.env` | Variáveis de ambiente |
 
 ## Critérios de Conclusão
 
-- [ ] `npm run dev` inicia sem erros
-- [ ] `npx prisma db push` cria tabelas no banco
-- [ ] Página inicial carrega
+- [ ] `python manage.py runserver` inicia sem erros
+- [ ] `npm run dev` inicia frontend sem erros
+- [ ] PostgreSQL configurado e acessível
+- [ ] Migrations iniciais aplicadas
+- [ ] CORS permite requisições do frontend
 - [ ] Tailwind funcionando (testar classe bg-purple-500)
-- [ ] Variáveis de ambiente configuradas
-- [ ] Git inicializado com .gitignore adequado
+- [ ] Git atualizado com nova estrutura
 
 ## Comandos de Verificação
 
 ```bash
-# Iniciar dev server
+# Backend
+cd backend
+source venv/bin/activate
+python manage.py check
+python manage.py migrate
+python manage.py runserver
+
+# Frontend (outro terminal)
+cd frontend
 npm run dev
-
-# Verificar banco
-npx prisma studio
-
-# Verificar tipos
-npm run type-check  # ou npx tsc --noEmit
 ```
 
 ## Notas
@@ -201,3 +340,4 @@ npm run type-check  # ou npx tsc --noEmit
 - Não implementar lógica de negócio nesta fase
 - Foco em estrutura e configuração
 - Próxima fase (01) implementará autenticação
+- Código do MVP (`forgereports/`) pode ser consultado como referência
