@@ -5,6 +5,7 @@ export interface Usuario {
   email: string;
   role: 'ADMIN' | 'TECNICO' | 'USUARIO';
   empresa_id: string;
+  empresa_nome: string;
 }
 
 export interface Empresa {
@@ -17,4 +18,18 @@ export interface Empresa {
 export interface AuthTokens {
   access: string;
   refresh: string;
+}
+
+export interface Conexao {
+  id: string;
+  nome: string;
+  tipo: 'SQLSERVER' | 'POSTGRESQL' | 'MYSQL';
+  host: string;
+  porta: number;
+  database: string;
+  usuario: string;
+  ativo: boolean;
+  ultimo_teste_ok: boolean | null;
+  ultimo_teste_em: string | null;
+  criado_em: string;
 }

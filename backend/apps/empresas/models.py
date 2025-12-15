@@ -5,6 +5,7 @@ from django.db import models
 class Empresa(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nome = models.CharField(max_length=255)
+    cnpj = models.CharField(max_length=18, unique=True, null=True, blank=True, help_text="CNPJ no formato 00.000.000/0000-00")
     slug = models.SlugField(unique=True)
     ativo = models.BooleanField(default=True)
     max_usuarios = models.IntegerField(default=10)
