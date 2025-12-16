@@ -8,7 +8,13 @@ from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
 from django.utils import timezone
 from .models import Relatorio
-from .serializers import RelatorioSerializer, ExecutarRelatorioSerializer
+from .serializers import (
+    RelatorioSerializer,
+    ExecutarRelatorioSerializer,
+    FiltroSerializer,
+    SalvarFiltrosSerializer,
+    RelatorioComFiltrosSerializer
+)
 from core.mixins import EmpresaQuerySetMixin
 from core.permissions import IsTecnicoOrAdmin
 from services.query_executor import QueryExecutor
@@ -43,7 +49,7 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
         executor = QueryExecutor(relatorio)
         resultado = executor.executar(
             usuario=request.user,
-            filtros=serializer.validated_data.get('filtros')
+            filtros_valores=serializer.validated_data.get('filtros')
         )
 
         return Response(resultado)
@@ -90,3 +96,29 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
                 {'erro': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @action(detail=True, methods=['get', 'put'], url_path='filtros')
+    def filtros(self, request, pk=None):
+        """
+        GET: Retorna filtros do relatório
+        PUT: Salva filtros do relatório (substitui todos)
+        """
+        relatorio = self.get_object()
+
+        if request.method == 'GET':
+            serializer = FiltroSerializer(relatorio.filtros.all(), many=True)
+            return Response(serializer.data)
+
+        elif request.method == 'PUT':
+            # Apenas técnicos e admins podem editar filtros
+            if not (request.user.role in ['ADMIN', 'TECNICO']):
+                return Response(
+                    {'erro': 'Você não tem permissão para editar filtros'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            serializer = SalvarFiltrosSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(relatorio)
+
+            return Response({'success': True})

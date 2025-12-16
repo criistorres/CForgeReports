@@ -35,6 +35,10 @@ class ExcelExporter:
             if pd.api.types.is_datetime64tz_dtype(df[col]):
                 df[col] = df[col].dt.tz_localize(None)
 
+        # Substituir NaN, inf e -inf por None para compatibilidade com Excel
+        import numpy as np
+        df = df.replace([np.inf, -np.inf, np.nan], None)
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, sheet_name='Dados', index=False)

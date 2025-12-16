@@ -2,7 +2,7 @@
 Serializers para a API de Relatórios.
 """
 from rest_framework import serializers
-from .models import Relatorio
+from .models import Relatorio, Filtro
 from services.query_validator import validar_query
 
 
@@ -36,3 +36,42 @@ class RelatorioSerializer(serializers.ModelSerializer):
 class ExecutarRelatorioSerializer(serializers.Serializer):
     """Serializer para execução de relatórios"""
     filtros = serializers.DictField(required=False, default=dict)
+
+
+class FiltroSerializer(serializers.ModelSerializer):
+    """Serializer para filtros dinâmicos"""
+    class Meta:
+        model = Filtro
+        fields = ['id', 'parametro', 'label', 'tipo', 'obrigatorio', 'valor_padrao', 'opcoes', 'ordem']
+        read_only_fields = ['id']
+
+
+class RelatorioComFiltrosSerializer(RelatorioSerializer):
+    """Serializer de relatório incluindo seus filtros"""
+    filtros = FiltroSerializer(many=True, read_only=True)
+
+    class Meta(RelatorioSerializer.Meta):
+        fields = RelatorioSerializer.Meta.fields + ['filtros']
+
+
+class SalvarFiltrosSerializer(serializers.Serializer):
+    """Serializer para salvar múltiplos filtros de uma vez"""
+    filtros = FiltroSerializer(many=True)
+
+    def save(self, relatorio):
+        """
+        Substitui todos os filtros do relatório pelos novos.
+
+        Args:
+            relatorio: Instância de Relatorio
+        """
+        # Deletar filtros existentes
+        relatorio.filtros.all().delete()
+
+        # Criar novos filtros
+        for i, filtro_data in enumerate(self.validated_data['filtros']):
+            Filtro.objects.create(
+                relatorio=relatorio,
+                ordem=i,
+                **filtro_data
+            )

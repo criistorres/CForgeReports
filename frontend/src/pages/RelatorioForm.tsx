@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../services/api'
+import FiltroForm from '../components/features/FiltroForm'
+import type { Filtro } from '../components/features/FiltroForm'
 
 interface Conexao {
   id: string
@@ -26,6 +28,9 @@ export default function RelatorioForm() {
   const [testando, setTestando] = useState(false)
   const [error, setError] = useState('')
   const [resultadoTeste, setResultadoTeste] = useState<any>(null)
+  const [filtros, setFiltros] = useState<Filtro[]>([])
+  const [salvandoFiltros, setSalvandoFiltros] = useState(false)
+  const [abaAtiva, setAbaAtiva] = useState<'dados' | 'filtros'>('dados')
 
   const [formData, setFormData] = useState<RelatorioData>({
     nome: '',
@@ -63,8 +68,36 @@ export default function RelatorioForm() {
         limite_linhas_tela: response.data.limite_linhas_tela,
         permite_exportar: response.data.permite_exportar
       })
+      // Carregar filtros
+      loadFiltros()
     } catch (err) {
       setError('Erro ao carregar relatório')
+    }
+  }
+
+  async function loadFiltros() {
+    try {
+      const response = await api.get(`/relatorios/${id}/filtros/`)
+      setFiltros(response.data)
+    } catch (err) {
+      console.error('Erro ao carregar filtros:', err)
+    }
+  }
+
+  async function salvarFiltros() {
+    if (!id) return
+
+    setSalvandoFiltros(true)
+    setError('')
+
+    try {
+      await api.put(`/relatorios/${id}/filtros/`, { filtros })
+      alert('Filtros salvos com sucesso!')
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.erro || 'Erro ao salvar filtros'
+      setError(errorMsg)
+    } finally {
+      setSalvandoFiltros(false)
     }
   }
 
@@ -117,7 +150,34 @@ export default function RelatorioForm() {
         {isEditing ? 'Editar Relatório' : 'Novo Relatório'}
       </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {isEditing && (
+        <div className="flex gap-2 mb-6 border-b border-slate-700">
+          <button
+            type="button"
+            onClick={() => setAbaAtiva('dados')}
+            className={`px-4 py-2 ${
+              abaAtiva === 'dados'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Dados do Relatório
+          </button>
+          <button
+            type="button"
+            onClick={() => setAbaAtiva('filtros')}
+            className={`px-4 py-2 ${
+              abaAtiva === 'filtros'
+                ? 'border-b-2 border-purple-500 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Filtros
+          </button>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6" style={{ display: abaAtiva === 'dados' ? 'block' : 'none' }}>
         <div className="bg-slate-800 p-6 rounded-lg space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -278,6 +338,38 @@ export default function RelatorioForm() {
           </button>
         </div>
       </form>
+
+      {isEditing && abaAtiva === 'filtros' && (
+        <div className="space-y-6">
+          <div className="bg-slate-800 p-6 rounded-lg">
+            <FiltroForm filtros={filtros} onChange={setFiltros} />
+          </div>
+
+          {error && (
+            <div className="bg-red-500/20 text-red-400 p-4 rounded">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={salvarFiltros}
+              disabled={salvandoFiltros}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+            >
+              {salvandoFiltros ? 'Salvando...' : 'Salvar Filtros'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/relatorios')}
+              className="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded transition"
+            >
+              Voltar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

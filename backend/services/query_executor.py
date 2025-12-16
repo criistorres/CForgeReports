@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.relatorios.models import Relatorio
 from apps.execucoes.models import Execucao
 from services.database_connector import DatabaseConnector
+from services.query_params import substituir_parametros
 
 
 class QueryExecutor:
@@ -26,13 +27,13 @@ class QueryExecutor:
         self.relatorio = relatorio
         self.connector = DatabaseConnector(relatorio.conexao)
 
-    def executar(self, usuario, filtros: dict = None, limite: int = None) -> dict:
+    def executar(self, usuario, filtros_valores: dict = None, limite: int = None) -> dict:
         """
         Executa relatório e retorna resultado.
 
         Args:
             usuario: Usuário que está executando
-            filtros: Dicionário com filtros aplicados (para fase 4)
+            filtros_valores: Dicionário com valores dos filtros {parametro: valor}
             limite: Limite de linhas para exibição (padrão: limite_linhas_tela do relatório)
 
         Returns:
@@ -55,18 +56,28 @@ class QueryExecutor:
         inicio = datetime.now()
         limite = limite or self.relatorio.limite_linhas_tela
 
+        # Buscar filtros do relatório
+        filtros = list(self.relatorio.filtros.all())
+
+        # Substituir parâmetros na query se houver filtros
+        query = self.relatorio.query_sql
+        if filtros and filtros_valores:
+            query, erro = substituir_parametros(query, filtros, filtros_valores)
+            if erro:
+                return {'sucesso': False, 'erro': erro}
+
         # Criar registro de execução
         execucao = Execucao.objects.create(
             empresa=self.relatorio.empresa,
             relatorio=self.relatorio,
             usuario=usuario,
-            filtros_usados=filtros
+            filtros_usados=filtros_valores
         )
 
         try:
             # Executar query
             conn = self.connector.get_connection()
-            df = pd.read_sql(self.relatorio.query_sql, conn)
+            df = pd.read_sql(query, conn)
             conn.close()
 
             tempo_ms = int((datetime.now() - inicio).total_seconds() * 1000)
@@ -74,6 +85,29 @@ class QueryExecutor:
 
             # Limitar linhas para exibição
             df_limitado = df.head(limite)
+
+            # Converter para dicionário e tratar valores NaN/None
+            import json
+            import numpy as np
+
+            # Substituir NaN, inf e -inf por None
+            dados = df_limitado.replace([np.inf, -np.inf, np.nan], None).to_dict('records')
+
+            # Garantir que todos os valores são JSON serializáveis
+            dados_limpos = []
+            for row in dados:
+                row_limpo = {}
+                for key, value in row.items():
+                    if pd.isna(value) or value is pd.NaT or value is pd.NA:
+                        row_limpo[key] = None
+                    elif isinstance(value, (np.integer, np.floating)):
+                        if np.isnan(value) or np.isinf(value):
+                            row_limpo[key] = None
+                        else:
+                            row_limpo[key] = value.item()
+                    else:
+                        row_limpo[key] = value
+                dados_limpos.append(row_limpo)
 
             # Atualizar execução
             execucao.finalizado_em = timezone.now()
@@ -85,7 +119,7 @@ class QueryExecutor:
             return {
                 'sucesso': True,
                 'colunas': df_limitado.columns.tolist(),
-                'dados': df_limitado.to_dict('records'),
+                'dados': dados_limpos,
                 'total_linhas': total_linhas,
                 'linhas_exibidas': len(df_limitado),
                 'tempo_ms': tempo_ms,

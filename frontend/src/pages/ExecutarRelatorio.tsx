@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../services/api'
+import FiltroInput from '../components/features/FiltroInput'
+import type { Filtro } from '../components/features/FiltroForm'
 
 interface Relatorio {
   id: string
@@ -27,9 +29,12 @@ export default function ExecutarRelatorio() {
   const [loading, setLoading] = useState(false)
   const [exportando, setExportando] = useState(false)
   const [error, setError] = useState('')
+  const [filtros, setFiltros] = useState<Filtro[]>([])
+  const [valoresFiltros, setValoresFiltros] = useState<Record<string, any>>({})
 
   useEffect(() => {
     loadRelatorio()
+    loadFiltros()
   }, [id])
 
   async function loadRelatorio() {
@@ -41,13 +46,34 @@ export default function ExecutarRelatorio() {
     }
   }
 
-  async function executar() {
+  async function loadFiltros() {
+    try {
+      const response = await api.get(`/relatorios/${id}/filtros/`)
+      setFiltros(response.data)
+      // Inicializar valores com valores padrão
+      const valores: Record<string, any> = {}
+      response.data.forEach((filtro: Filtro) => {
+        if (filtro.valor_padrao) {
+          valores[filtro.parametro] = filtro.valor_padrao
+        }
+      })
+      setValoresFiltros(valores)
+    } catch (err) {
+      console.error('Erro ao carregar filtros:', err)
+    }
+  }
+
+  async function executar(e?: React.FormEvent) {
+    if (e) e.preventDefault()
+
     setLoading(true)
     setError('')
     setResultado(null)
 
     try {
-      const response = await api.post(`/relatorios/${id}/executar/`)
+      const response = await api.post(`/relatorios/${id}/executar/`, {
+        filtros: valoresFiltros
+      })
       setResultado(response.data)
     } catch (err: any) {
       const errorMsg = err.response?.data?.erro || 'Erro ao executar relatório'
@@ -112,24 +138,59 @@ export default function ExecutarRelatorio() {
         </details>
       </div>
 
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={executar}
-          disabled={loading}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
-        >
-          {loading ? 'Executando...' : 'Executar Relatório'}
-        </button>
-        {resultado?.sucesso && (
+      {filtros.length > 0 ? (
+        <form onSubmit={executar} className="bg-slate-800 p-6 rounded-lg mb-6 space-y-6">
+          <h3 className="text-lg font-semibold text-white">Filtros</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtros.map((filtro) => (
+              <FiltroInput
+                key={filtro.parametro}
+                filtro={filtro}
+                value={valoresFiltros[filtro.parametro]}
+                onChange={(valor) => setValoresFiltros({ ...valoresFiltros, [filtro.parametro]: valor })}
+              />
+            ))}
+          </div>
+          <div className="flex gap-4 pt-4 border-t border-slate-700">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+            >
+              {loading ? 'Executando...' : 'Executar Relatório'}
+            </button>
+            {resultado?.sucesso && (
+              <button
+                type="button"
+                onClick={exportar}
+                disabled={exportando}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+              >
+                {exportando ? 'Exportando...' : 'Exportar Excel'}
+              </button>
+            )}
+          </div>
+        </form>
+      ) : (
+        <div className="flex gap-4 mb-6">
           <button
-            onClick={exportar}
-            disabled={exportando}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+            onClick={executar}
+            disabled={loading}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
           >
-            {exportando ? 'Exportando...' : 'Exportar Excel'}
+            {loading ? 'Executando...' : 'Executar Relatório'}
           </button>
-        )}
-      </div>
+          {resultado?.sucesso && (
+            <button
+              onClick={exportar}
+              disabled={exportando}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+            >
+              {exportando ? 'Exportando...' : 'Exportar Excel'}
+            </button>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-500/20 text-red-400 p-4 rounded mb-6">
