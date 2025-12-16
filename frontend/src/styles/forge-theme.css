@@ -1,0 +1,186 @@
+/* ForgeReports Theme - Otimizado para Performance */
+
+/* Glass Card - SEM backdrop-filter contínuo */
+.glass-card {
+  @apply bg-forge-card border border-primary-200 rounded-[var(--radius-forge)];
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  @apply border-primary-300;
+  box-shadow: 0 20px 40px rgb(168 85 247 / 0.15);
+}
+
+/* Gradient Border - Estático */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(#0f172a, #0f172a) padding-box,
+              linear-gradient(135deg, #a855f7, #06d6a0) border-box;
+  border: 2px solid transparent;
+  border-radius: 12px;
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #a855f7 0%, #06d6a0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow apenas em interação (não contínuo) */
+.glow-on-hover:hover {
+  box-shadow: 0 0 20px rgb(168 85 247 / 0.4);
+}
+
+.glow-on-focus:focus {
+  box-shadow: 0 0 0 3px rgb(168 85 247 / 0.2);
+}
+
+/* Status Dot */
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot.active {
+  @apply bg-success;
+  box-shadow: 0 0 8px rgb(16 185 129 / 0.5);
+}
+
+.status-dot.inactive {
+  background-color: #9ca3af;
+}
+
+/* Loading - Única animação permitida */
+.loading-bar {
+  height: 2px;
+  background: linear-gradient(90deg, #a855f7, #06d6a0, #a855f7);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 0%;
+  }
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(15 23 42 / 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #a855f7, #06d6a0);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8b5cf6, #10b981);
+}
+
+/* Terminal/Code blocks */
+.code-block {
+  @apply bg-black/90 border border-primary-500 rounded-[var(--radius-forge)] p-4 text-sm;
+  font-family: var(--font-family-mono);
+  color: #10b981;
+}
+
+/* Modal overlay - backdrop-filter permitido */
+.modal-overlay {
+  @apply bg-black/80;
+  backdrop-filter: blur(4px);
+}
+
+/* Table styles */
+.table-container {
+  @apply bg-forge-card border border-primary-200 rounded-[var(--radius-forge)] overflow-hidden;
+}
+
+.table-header {
+  @apply bg-primary-100 border-b border-primary-200;
+}
+
+.table-row {
+  @apply border-b border-white/5;
+  transition: background-color 0.2s ease;
+}
+
+.table-row:hover {
+  @apply bg-primary-50;
+}
+
+/* Form input styles */
+.form-input {
+  @apply bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  @apply outline-none border-primary-500;
+  box-shadow: 0 0 0 3px rgb(168 85 247 / 0.1);
+}
+
+.form-label {
+  @apply text-slate-300 font-medium mb-2 block;
+}
+
+/* Button gradient */
+.btn-gradient {
+  background: linear-gradient(135deg, #a855f7, #8b5cf6);
+  transition: all 0.2s ease;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #8b5cf6, #764ba2);
+  box-shadow: 0 10px 25px rgb(168 85 247 / 0.3);
+  transform: translateY(-1px);
+}
+
+/* Badge styles */
+.badge {
+  @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+}
+
+.badge.active {
+  @apply bg-success/20 text-success border border-success/30;
+}
+
+.badge.inactive {
+  background-color: rgb(100 116 139 / 0.2);
+  color: #9ca3af;
+  border: 1px solid rgb(100 116 139 / 0.3);
+}
+
+.badge.pending {
+  @apply bg-warning/20 text-warning border border-warning/30;
+}
+
+.badge.error {
+  @apply bg-error/20 text-error border border-error/30;
+}
+
+/* Notification styles */
+.notification {
+  @apply bg-forge-card border border-primary-300 rounded-[var(--radius-forge)] shadow-card;
+}
+
+.notification.success {
+  @apply border-success/30;
+}
+
+.notification.error {
+  @apply border-error/30;
+}
+
+.notification.warning {
+  @apply border-warning/30;
+}

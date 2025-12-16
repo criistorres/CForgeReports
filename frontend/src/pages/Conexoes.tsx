@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import api from '../services/api'
+import api from '@/services/api'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { ForgeCard, ForgeButton, ForgeInput, ForgeLabel, ForgeBadge, ForgeSelect } from '@/components/forge'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 interface Conexao {
   id: string
@@ -93,17 +96,21 @@ export default function Conexoes() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-white text-xl">Carregando...</div>
-      </div>
+      <AppLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="loading-bar w-32"></div>
+        </div>
+      </AppLayout>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-red-400 text-xl">{error}</div>
-      </div>
+      <AppLayout>
+        <div className="notification error p-4 rounded-lg">
+          <p className="text-error">{error}</p>
+        </div>
+      </AppLayout>
     )
   }
 
@@ -184,67 +191,64 @@ export default function Conexoes() {
   }
 
   return (
-    <div className="p-6">
+    <AppLayout>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">Conexões de Banco</h1>
-        <button
-          onClick={handleNovaConexao}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition cursor-pointer"
-        >
+        <h1 className="text-3xl font-bold gradient-text">Conexões de Banco</h1>
+        <ForgeButton onClick={handleNovaConexao} glow>
           + Nova Conexão
-        </button>
+        </ForgeButton>
       </div>
 
       {showForm && (
-        <div className="bg-slate-800 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            {editingId ? 'Editar Conexão' : 'Nova Conexão'}
-          </h2>
+        <ForgeCard
+          title={editingId ? 'Editar Conexão' : 'Nova Conexão'}
+          className="mb-6"
+        >
           <form onSubmit={handleSalvar} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Nome *</label>
-                <input
+                <ForgeLabel htmlFor="nome">Nome *</ForgeLabel>
+                <ForgeInput
+                  id="nome"
                   type="text"
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Tipo *</label>
-                <select
+                <ForgeLabel htmlFor="tipo">Tipo *</ForgeLabel>
+                <ForgeSelect
+                  id="tipo"
                   value={formData.tipo}
                   onChange={(e) => handleTipoChange(e.target.value)}
-                  className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
                   required
                 >
                   <option value="POSTGRESQL">PostgreSQL</option>
                   <option value="SQLSERVER">SQL Server</option>
                   <option value="MYSQL">MySQL</option>
-                </select>
+                </ForgeSelect>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-slate-300 mb-2">Host *</label>
-                <input
+                <ForgeLabel htmlFor="host">Host *</ForgeLabel>
+                <ForgeInput
+                  id="host"
                   type="text"
                   value={formData.host}
                   onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                  className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Porta *</label>
-                <input
+                <ForgeLabel htmlFor="porta">Porta *</ForgeLabel>
+                <ForgeInput
+                  id="porta"
                   type="number"
                   value={formData.porta}
                   onChange={(e) => setFormData({ ...formData, porta: parseInt(e.target.value) })}
-                  className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
                   required
                 />
               </div>
@@ -252,150 +256,150 @@ export default function Conexoes() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Database *</label>
-                <input
+                <ForgeLabel htmlFor="database">Database *</ForgeLabel>
+                <ForgeInput
+                  id="database"
                   type="text"
                   value={formData.database}
                   onChange={(e) => setFormData({ ...formData, database: e.target.value })}
-                  className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Usuário *</label>
-                <input
+                <ForgeLabel htmlFor="usuario">Usuário *</ForgeLabel>
+                <ForgeInput
+                  id="usuario"
                   type="text"
                   value={formData.usuario}
                   onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                  className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <ForgeLabel htmlFor="senha">
                 Senha {editingId ? '(deixe em branco para manter a atual)' : '*'}
-              </label>
-              <input
+              </ForgeLabel>
+              <ForgeInput
+                id="senha"
                 type="password"
                 value={formData.senha}
                 onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
                 required={!editingId}
               />
             </div>
 
             <div className="flex gap-3">
-              <button
+              <ForgeButton
                 type="button"
                 onClick={handleTestarFormulario}
                 disabled={testando}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition disabled:opacity-50"
+                variant="outline"
               >
                 {testando ? 'Testando...' : 'Testar Conexão'}
-              </button>
-              <button
+              </ForgeButton>
+              <ForgeButton
                 type="submit"
                 disabled={salvando}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition disabled:opacity-50"
+                glow
               >
                 {salvando ? 'Salvando...' : 'Salvar'}
-              </button>
-              <button
+              </ForgeButton>
+              <ForgeButton
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded transition"
+                variant="ghost"
               >
                 Cancelar
-              </button>
+              </ForgeButton>
             </div>
           </form>
-        </div>
+        </ForgeCard>
       )}
 
       {conexoes.length === 0 ? (
-        <div className="bg-slate-800 rounded-lg p-8 text-center">
+        <ForgeCard className="text-center">
           <p className="text-slate-400 text-lg mb-4">Nenhuma conexão cadastrada</p>
           <p className="text-slate-500">Clique em "Nova Conexão" para adicionar sua primeira conexão de banco de dados</p>
-        </div>
+        </ForgeCard>
       ) : (
-        <div className="bg-slate-800 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-700">
-              <tr>
-                <th className="text-left p-4 text-slate-300">Nome</th>
-                <th className="text-left p-4 text-slate-300">Tipo</th>
-                <th className="text-left p-4 text-slate-300">Host</th>
-                <th className="text-left p-4 text-slate-300">Database</th>
-                <th className="text-left p-4 text-slate-300">Status</th>
-                <th className="text-left p-4 text-slate-300">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="table-container">
+          <Table>
+            <TableHeader>
+              <TableRow className="table-header">
+                <TableHead>Nome</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Host</TableHead>
+                <TableHead>Database</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {conexoes.map((conexao) => (
-                <tr key={conexao.id} className="border-t border-slate-700 hover:bg-slate-750">
-                  <td className="p-4 text-white font-medium">{conexao.nome}</td>
-                  <td className="p-4 text-slate-300">
-                    <span className="inline-flex items-center px-2 py-1 rounded bg-slate-700 text-xs">
+                <TableRow key={conexao.id} className="table-row">
+                  <TableCell className="font-medium text-white">{conexao.nome}</TableCell>
+                  <TableCell>
+                    <ForgeBadge variant="inactive">
                       {conexao.tipo}
-                    </span>
-                  </td>
-                  <td className="p-4 text-slate-300">
+                    </ForgeBadge>
+                  </TableCell>
+                  <TableCell className="text-slate-300">
                     {conexao.host}:{conexao.porta}
-                  </td>
-                  <td className="p-4 text-slate-300">{conexao.database}</td>
-                  <td className="p-4">
+                  </TableCell>
+                  <TableCell className="text-slate-300">{conexao.database}</TableCell>
+                  <TableCell>
                     {conexao.ultimo_teste_ok === true && (
-                      <span className="text-green-400 flex items-center gap-1">
-                        <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                        OK
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="status-dot active"></span>
+                        <span className="text-success">OK</span>
+                      </div>
                     )}
                     {conexao.ultimo_teste_ok === false && (
-                      <span className="text-red-400 flex items-center gap-1">
-                        <span className="w-2 h-2 bg-red-400 rounded-full"></span>
-                        Erro
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="status-dot inactive"></span>
+                        <span className="text-error">Erro</span>
+                      </div>
                     )}
                     {conexao.ultimo_teste_ok === null && (
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <span className="w-2 h-2 bg-slate-500 rounded-full"></span>
-                        Não testado
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="status-dot inactive"></span>
+                        <span className="text-slate-500">Não testado</span>
+                      </div>
                     )}
-                  </td>
-                  <td className="p-4">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-3">
                       <button
                         onClick={() => testarConexao(conexao.id)}
-                        className="text-purple-400 hover:text-purple-300 transition"
+                        className="text-primary-400 hover:text-primary-300 transition"
                         title="Testar conexão"
                       >
                         Testar
                       </button>
                       <button
                         onClick={() => handleEditarConexao(conexao)}
-                        className="text-blue-400 hover:text-blue-300 transition"
+                        className="text-accent-500 hover:text-accent-400 transition"
                         title="Editar conexão"
                       >
                         Editar
                       </button>
                       <button
                         onClick={() => deletarConexao(conexao.id, conexao.nome)}
-                        className="text-red-400 hover:text-red-300 transition"
+                        className="text-error hover:text-red-300 transition"
                         title="Deletar conexão"
                       >
                         Deletar
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
-    </div>
+    </AppLayout>
   )
 }

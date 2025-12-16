@@ -1,1 +1,88 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "./styles/forge-theme.css";
+
+@theme {
+  /* ForgeReports Color Palette */
+  --color-forge-bg: #0f172a;
+  --color-forge-card: rgb(15 23 42 / 0.7);
+  --color-forge-hover: rgb(15 23 42 / 0.9);
+
+  /* Primary - Purple */
+  --color-primary-50: rgb(168 85 247 / 0.05);
+  --color-primary-100: rgb(168 85 247 / 0.1);
+  --color-primary-200: rgb(168 85 247 / 0.2);
+  --color-primary-300: rgb(168 85 247 / 0.3);
+  --color-primary-400: #8b5cf6;
+  --color-primary-500: #a855f7;
+  --color-primary-600: #9333ea;
+  --color-primary-DEFAULT: #a855f7;
+
+  /* Accent - Green */
+  --color-accent-50: rgb(6 214 160 / 0.05);
+  --color-accent-100: rgb(6 214 160 / 0.1);
+  --color-accent-200: rgb(6 214 160 / 0.2);
+  --color-accent-500: #06d6a0;
+  --color-accent-600: #10b981;
+  --color-accent-DEFAULT: #06d6a0;
+
+  /* Status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* Border Radius */
+  --radius-forge: 12px;
+
+  /* Shadows */
+  --shadow-glow-purple: 0 0 20px rgb(168 85 247 / 0.3);
+  --shadow-glow-green: 0 0 20px rgb(6 214 160 / 0.3);
+  --shadow-card: 0 20px 40px rgb(0 0 0 / 0.3);
+
+  /* Font Families */
+  --font-family-sans: 'Inter', sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+}
+
+/* shadcn/ui CSS Variables for Dark Theme */
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 270 91% 65%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 270 91% 65%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-forge-bg);
+    color: hsl(var(--foreground));
+    font-family: var(--font-family-sans);
+  }
+}

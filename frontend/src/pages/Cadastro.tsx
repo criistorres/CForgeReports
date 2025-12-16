@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
+import { Link } from 'react-router-dom';
+import api from '@/services/api';
+import { ForgeCard, ForgeButton, ForgeInput, ForgeLabel } from '@/components/forge';
 
 export default function Cadastro() {
   const [empresaNome, setEmpresaNome] = useState('');
@@ -12,8 +12,6 @@ export default function Cadastro() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
 
   const formatCNPJ = (value: string) => {
     // Remove tudo que não é número
@@ -98,113 +96,119 @@ export default function Cadastro() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
-      <form onSubmit={handleSubmit} className="bg-slate-800 p-8 rounded-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-white mb-6">Criar Nova Empresa</h1>
+    <div className="min-h-screen flex items-center justify-center bg-forge-bg p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold gradient-text mb-2">ForgeReports</h1>
+          <p className="text-slate-400">Criar Nova Empresa</p>
+        </div>
 
-        {error && (
-          <div className="bg-red-500/20 text-red-400 p-3 rounded mb-4 text-sm">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-4">
-          {/* Dados da Empresa */}
-          <div>
-            <label className="block text-slate-400 mb-2 text-sm">Nome da Empresa</label>
-            <input
-              type="text"
-              value={empresaNome}
-              onChange={(e) => setEmpresaNome(e.target.value)}
-              className="w-full p-3 bg-slate-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Ex: Acme Corporation"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-400 mb-2 text-sm">CNPJ</label>
-            <input
-              type="text"
-              value={cnpj}
-              onChange={handleCNPJChange}
-              className="w-full p-3 bg-slate-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="00.000.000/0000-00"
-              required
-            />
-          </div>
-
-          {/* Dados do Administrador */}
-          <div className="pt-4 border-t border-slate-700">
-            <p className="text-slate-400 text-sm mb-4">Dados do Administrador</p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-slate-400 mb-2 text-sm">Seu Nome</label>
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  className="w-full p-3 bg-slate-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Ex: João Silva"
-                  required
-                />
+        <ForgeCard glowOnHover={false}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="notification error p-3 rounded-lg">
+                <p className="text-error text-sm">{error}</p>
               </div>
+            )}
 
-              <div>
-                <label className="block text-slate-400 mb-2 text-sm">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 bg-slate-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="seu@email.com"
-                  required
-                />
-              </div>
+            {/* Dados da Empresa */}
+            <div>
+              <ForgeLabel htmlFor="empresaNome">Nome da Empresa</ForgeLabel>
+              <ForgeInput
+                id="empresaNome"
+                type="text"
+                value={empresaNome}
+                onChange={(e) => setEmpresaNome(e.target.value)}
+                placeholder="Ex: Acme Corporation"
+                required
+              />
+            </div>
 
-              <div>
-                <label className="block text-slate-400 mb-2 text-sm">Senha</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-3 bg-slate-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                />
-              </div>
+            <div>
+              <ForgeLabel htmlFor="cnpj">CNPJ</ForgeLabel>
+              <ForgeInput
+                id="cnpj"
+                type="text"
+                value={cnpj}
+                onChange={handleCNPJChange}
+                placeholder="00.000.000/0000-00"
+                required
+              />
+            </div>
 
-              <div>
-                <label className="block text-slate-400 mb-2 text-sm">Confirmar Senha</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full p-3 bg-slate-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Digite a senha novamente"
-                  required
-                />
+            {/* Dados do Administrador */}
+            <div className="pt-4 border-t border-primary-200">
+              <p className="text-slate-400 text-sm mb-4">Dados do Administrador</p>
+
+              <div className="space-y-4">
+                <div>
+                  <ForgeLabel htmlFor="nome">Seu Nome</ForgeLabel>
+                  <ForgeInput
+                    id="nome"
+                    type="text"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Ex: João Silva"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <ForgeLabel htmlFor="email">Email</ForgeLabel>
+                  <ForgeInput
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <ForgeLabel htmlFor="password">Senha</ForgeLabel>
+                  <ForgeInput
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <ForgeLabel htmlFor="confirmPassword">Confirmar Senha</ForgeLabel>
+                  <ForgeInput
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Digite a senha novamente"
+                    required
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white p-3 rounded font-semibold transition-colors"
-          >
-            {loading ? 'Criando...' : 'Criar Empresa'}
-          </button>
+            <ForgeButton
+              type="submit"
+              disabled={loading}
+              className="w-full"
+              glow
+            >
+              {loading ? 'Criando...' : 'Criar Empresa'}
+            </ForgeButton>
 
-          <div className="text-center text-slate-400 text-sm">
-            Já tem uma conta?{' '}
-            <Link to="/login" className="text-purple-400 hover:text-purple-300">
-              Fazer login
-            </Link>
-          </div>
-        </div>
-      </form>
+            <div className="text-center text-slate-400 text-sm pt-4 border-t border-primary-200">
+              Já tem uma conta?{' '}
+              <Link to="/login" className="text-primary-500 hover:text-primary-400 transition-colors">
+                Fazer login
+              </Link>
+            </div>
+          </form>
+        </ForgeCard>
+      </div>
     </div>
   );
 }

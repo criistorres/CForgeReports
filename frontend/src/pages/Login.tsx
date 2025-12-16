@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { ForgeCard, ForgeButton, ForgeInput, ForgeLabel } from '@/components/forge';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -27,53 +28,63 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
-      <form onSubmit={handleSubmit} className="bg-slate-800 p-8 rounded-lg w-96">
-        <h1 className="text-2xl font-bold text-white mb-6">ForgeReports</h1>
-
-        {error && (
-          <div className="bg-red-500/20 text-red-400 p-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-4">
-          <label className="block text-slate-400 mb-2">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 bg-slate-700 text-white rounded"
-            required
-          />
+    <div className="min-h-screen flex items-center justify-center bg-forge-bg">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold gradient-text mb-2">ForgeReports</h1>
+          <p className="text-slate-400">Portal de Relatórios SQL</p>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-slate-400 mb-2">Senha</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 bg-slate-700 text-white rounded"
-            required
-          />
-        </div>
+        <ForgeCard glowOnHover={false}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="notification error p-3 rounded-lg">
+                <p className="text-error text-sm">{error}</p>
+              </div>
+            )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded font-semibold"
-        >
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
+            <div>
+              <ForgeLabel htmlFor="email">Email</ForgeLabel>
+              <ForgeInput
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
 
-        <div className="mt-4 text-center text-slate-400 text-sm">
-          Não tem uma conta?{' '}
-          <Link to="/cadastro" className="text-purple-400 hover:text-purple-300">
-            Criar nova empresa
-          </Link>
-        </div>
-      </form>
+            <div>
+              <ForgeLabel htmlFor="password">Senha</ForgeLabel>
+              <ForgeInput
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <ForgeButton
+              type="submit"
+              disabled={loading}
+              className="w-full"
+              glow
+            >
+              {loading ? 'Entrando...' : 'Entrar'}
+            </ForgeButton>
+
+            <div className="text-center text-slate-400 text-sm pt-4 border-t border-primary-200">
+              Não tem uma conta?{' '}
+              <Link to="/cadastro" className="text-primary-500 hover:text-primary-400 transition-colors">
+                Criar nova empresa
+              </Link>
+            </div>
+          </form>
+        </ForgeCard>
+      </div>
     </div>
   );
 }
