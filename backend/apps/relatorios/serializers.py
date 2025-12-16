@@ -9,15 +9,32 @@ from services.query_validator import validar_query
 class RelatorioSerializer(serializers.ModelSerializer):
     """Serializer para CRUD de relatórios"""
     conexao_nome = serializers.CharField(source='conexao.nome', read_only=True)
+    pode_exportar = serializers.SerializerMethodField()
 
     class Meta:
         model = Relatorio
         fields = [
             'id', 'nome', 'descricao', 'conexao', 'conexao_nome',
             'query_sql', 'ativo', 'limite_linhas_tela',
-            'permite_exportar', 'criado_em'
+            'permite_exportar', 'pode_exportar', 'criado_em'
         ]
-        read_only_fields = ['id', 'criado_em']
+        read_only_fields = ['id', 'criado_em', 'pode_exportar']
+
+    def get_pode_exportar(self, obj):
+        """Verifica se o usuário atual pode exportar este relatório"""
+        request = self.context.get('request')
+        if not request or not request.user:
+            return False
+
+        user = request.user
+
+        # Admin e Técnico sempre podem exportar
+        if user.role in ['ADMIN', 'TECNICO']:
+            return True
+
+        # Buscar permissão explícita
+        perm = obj.permissoes.filter(usuario=user).first()
+        return perm and perm.nivel == 'EXPORTAR' if perm else False
 
     def validate_query_sql(self, value):
         """Valida se a query é segura (apenas SELECT)"""

@@ -16,9 +16,11 @@ from .serializers import (
     RelatorioComFiltrosSerializer
 )
 from core.mixins import EmpresaQuerySetMixin
-from core.permissions import IsTecnicoOrAdmin
+from core.permissions import IsTecnicoOrAdmin, IsAdmin
 from services.query_executor import QueryExecutor
 from services.excel_exporter import ExcelExporter
+from services.permissoes import verificar_permissao
+from .models import Permissao
 
 
 class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
@@ -28,10 +30,20 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retorna apenas relatórios ativos da empresa do usuário"""
-        return Relatorio.objects.filter(
-            empresa_id=self.request.user.empresa_id,
+        user = self.request.user
+        qs = Relatorio.objects.filter(
+            empresa_id=user.empresa_id,
             ativo=True
-        ).select_related('conexao')
+        )
+
+        # Admin e Técnico veem todos os relatórios
+        if user.role in ['ADMIN', 'TECNICO']:
+            return qs.select_related('conexao')
+
+        # Usuário comum só vê relatórios com permissão explícita
+        return qs.filter(
+            permissoes__usuario=user
+        ).select_related('conexao').distinct()
 
     def get_permissions(self):
         """Apenas técnicos e admins podem criar/editar/deletar"""
@@ -43,6 +55,15 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
     def executar(self, request, pk=None):
         """Executa o relatório e retorna dados"""
         relatorio = self.get_object()
+
+        # Verificar permissão
+        perm = verificar_permissao(relatorio.id, request.user)
+        if not perm['tem_acesso']:
+            return Response(
+                {'erro': 'Você não tem permissão para acessar este relatório'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = ExecutarRelatorioSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -71,6 +92,14 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
     def exportar(self, request, pk=None):
         """Exporta relatório para Excel"""
         relatorio = self.get_object()
+
+        # Verificar permissão de exportar
+        perm = verificar_permissao(relatorio.id, request.user)
+        if not perm['pode_exportar']:
+            return Response(
+                {'erro': 'Você não tem permissão para exportar este relatório'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         if not relatorio.permite_exportar:
             return Response(
@@ -121,4 +150,70 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save(relatorio)
 
+            return Response({'success': True})
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='permissoes')
+    def permissoes(self, request, pk=None):
+        """
+        Gerenciamento de permissões do relatório.
+        GET: Lista permissões
+        POST: Adiciona/atualiza permissão
+        DELETE: Remove permissão
+        """
+        relatorio = self.get_object()
+
+        # Apenas Admin pode gerenciar permissões
+        if request.user.role != 'ADMIN':
+            return Response(
+                {'erro': 'Apenas administradores podem gerenciar permissões'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if request.method == 'GET':
+            perms = relatorio.permissoes.select_related('usuario')
+            data = [
+                {
+                    'id': str(p.id),
+                    'usuario_id': str(p.usuario_id),
+                    'usuario_nome': p.usuario.nome,
+                    'usuario_email': p.usuario.email,
+                    'nivel': p.nivel
+                }
+                for p in perms
+            ]
+            return Response(data)
+
+        elif request.method == 'POST':
+            usuario_id = request.data.get('usuario_id')
+            nivel = request.data.get('nivel', 'VISUALIZAR')
+
+            if not usuario_id:
+                return Response(
+                    {'erro': 'usuario_id é obrigatório'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            Permissao.objects.update_or_create(
+                relatorio=relatorio,
+                usuario_id=usuario_id,
+                defaults={
+                    'nivel': nivel,
+                    'criado_por': request.user
+                }
+            )
+            return Response({'success': True})
+
+        elif request.method == 'DELETE':
+            usuario_id = request.data.get('usuario_id')
+
+            if not usuario_id:
+                return Response(
+                    {'erro': 'usuario_id é obrigatório'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            Permissao.objects.filter(
+                relatorio=relatorio,
+                usuario_id=usuario_id
+            ).delete()
             return Response({'success': True})

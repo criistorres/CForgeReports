@@ -52,3 +52,27 @@ class Filtro(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.parametro})"
+
+
+class Permissao(models.Model):
+    """
+    Permissões de acesso aos relatórios.
+    Define quais usuários podem ver e exportar cada relatório.
+    """
+    class NivelPermissao(models.TextChoices):
+        VISUALIZAR = 'VISUALIZAR', 'Visualizar'
+        EXPORTAR = 'EXPORTAR', 'Exportar'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    relatorio = models.ForeignKey(Relatorio, on_delete=models.CASCADE, related_name='permissoes')
+    usuario = models.ForeignKey('usuarios.Usuario', on_delete=models.CASCADE, related_name='permissoes_relatorios')
+    nivel = models.CharField(max_length=20, choices=NivelPermissao.choices)
+    criado_por = models.ForeignKey('usuarios.Usuario', on_delete=models.SET_NULL, null=True, related_name='+')
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'permissoes'
+        unique_together = ['relatorio', 'usuario']
+
+    def __str__(self):
+        return f"{self.usuario.nome} - {self.relatorio.nome} ({self.nivel})"

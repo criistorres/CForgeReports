@@ -10,6 +10,7 @@ interface Relatorio {
   descricao: string
   query_sql: string
   conexao_nome: string
+  pode_exportar: boolean
 }
 
 interface ResultadoExecucao {
@@ -159,7 +160,7 @@ export default function ExecutarRelatorio() {
             >
               {loading ? 'Executando...' : 'Executar Relatório'}
             </button>
-            {resultado?.sucesso && (
+            {resultado?.sucesso && relatorio?.pode_exportar && (
               <button
                 type="button"
                 onClick={exportar}
@@ -180,7 +181,7 @@ export default function ExecutarRelatorio() {
           >
             {loading ? 'Executando...' : 'Executar Relatório'}
           </button>
-          {resultado?.sucesso && (
+          {resultado?.sucesso && relatorio?.pode_exportar && (
             <button
               onClick={exportar}
               disabled={exportando}

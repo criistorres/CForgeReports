@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../services/api'
 import FiltroForm from '../components/features/FiltroForm'
+import PermissoesForm from '../components/forge/PermissoesForm'
 import type { Filtro } from '../components/features/FiltroForm'
+import { useAuth } from '../contexts/AuthContext'
 
 interface Conexao {
   id: string
@@ -21,7 +23,9 @@ interface RelatorioData {
 export default function RelatorioForm() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const isEditing = !!id
+  const isAdmin = user?.role === 'ADMIN'
 
   const [conexoes, setConexoes] = useState<Conexao[]>([])
   const [loading, setLoading] = useState(false)
@@ -30,7 +34,7 @@ export default function RelatorioForm() {
   const [resultadoTeste, setResultadoTeste] = useState<any>(null)
   const [filtros, setFiltros] = useState<Filtro[]>([])
   const [salvandoFiltros, setSalvandoFiltros] = useState(false)
-  const [abaAtiva, setAbaAtiva] = useState<'dados' | 'filtros'>('dados')
+  const [abaAtiva, setAbaAtiva] = useState<'dados' | 'filtros' | 'permissoes'>('dados')
 
   const [formData, setFormData] = useState<RelatorioData>({
     nome: '',
@@ -174,6 +178,19 @@ export default function RelatorioForm() {
           >
             Filtros
           </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setAbaAtiva('permissoes')}
+              className={`px-4 py-2 ${
+                abaAtiva === 'permissoes'
+                  ? 'border-b-2 border-purple-500 text-white'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Permissões
+            </button>
+          )}
         </div>
       )}
 
@@ -360,6 +377,21 @@ export default function RelatorioForm() {
             >
               {salvandoFiltros ? 'Salvando...' : 'Salvar Filtros'}
             </button>
+            <button
+              type="button"
+              onClick={() => navigate('/relatorios')}
+              className="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded transition"
+            >
+              Voltar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isEditing && abaAtiva === 'permissoes' && isAdmin && (
+        <div className="space-y-6">
+          <PermissoesForm relatorioId={id!} />
+          <div className="flex gap-4">
             <button
               type="button"
               onClick={() => navigate('/relatorios')}
