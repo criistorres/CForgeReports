@@ -1,4 +1,4 @@
-# Fase 05 - Permissões
+# Fase 06 - Permissões
 
 ## Objetivo
 
@@ -6,13 +6,13 @@ Implementar controle de acesso: quais usuários podem ver/executar/exportar cada
 
 ## Contexto
 
-- Relatórios com filtros funcionando (Fase 4 completa)
+- Estilo UI implementado (Fase 5 completa)
 - Atualmente todos veem todos os relatórios da empresa
 - Após esta fase: usuário só vê relatórios com permissão explícita
 
 ## Dependências
 
-- Fase 4 completa (filtros)
+- Fase 5 completa (estilo UI)
 
 ## Casos de Uso Relacionados
 

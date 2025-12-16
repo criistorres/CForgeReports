@@ -1,4 +1,4 @@
-# Fase 06 - Organização e UX
+# Fase 07 - Organização e UX
 
 ## Objetivo
 
@@ -6,13 +6,13 @@ Melhorar experiência do usuário: pastas, favoritos, histórico, busca e dashbo
 
 ## Contexto
 
-- Sistema funcional completo (Fases 0-5 completas)
+- Sistema funcional completo (Fases 0-6 completas)
 - Usuários conseguem criar e consumir relatórios
 - Falta organização e conveniências de UX
 
 ## Dependências
 
-- Fase 5 completa (permissões)
+- Fase 6 completa (permissões)
 
 ## Casos de Uso Relacionados
 

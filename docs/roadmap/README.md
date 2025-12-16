@@ -13,8 +13,9 @@ O desenvolvimento está dividido em fases incrementais. Cada fase entrega valor 
 | 02 | [Conexões](./FASE-02-conexoes.md) | Cadastro de bancos | UC03 |
 | 03 | [Relatórios Básicos](./FASE-03-relatorios-basicos.md) | Criar e executar | UC04, UC07 |
 | 04 | [Filtros](./FASE-04-filtros.md) | Parâmetros dinâmicos | UC05 |
-| 05 | [Permissões](./FASE-05-permissoes.md) | Controle de acesso | UC06 |
-| 06 | [Organização e UX](./FASE-06-organizacao-ux.md) | Pastas, favoritos | UC08 |
+| 05 | [Estilo e UI](./FASE-05-estilo-ui.md) | shadcn + tema ForgeReports | - |
+| 06 | [Permissões](./FASE-06-permissoes.md) | Controle de acesso | UC06 |
+| 07 | [Organização e UX](./FASE-07-organizacao-ux.md) | Pastas, favoritos | UC08 |
 
 ## Marcos de Entrega
 
@@ -24,8 +25,9 @@ MARCO 1 - MVP (Fases 0-3)
 ├── Técnico cria → Usuário executa → Exporta Excel
 └── Validação: 1 cliente piloto
 
-MARCO 2 - Produto Básico (Fases 4-6)
+MARCO 2 - Produto Básico (Fases 4-7)
 ├── Filtros dinâmicos
+├── UI consistente (shadcn)
 ├── Permissões granulares
 ├── Interface organizada
 └── Validação: 3+ clientes pagantes
@@ -51,15 +53,17 @@ Fase 2 (Conexões)             │
     ▼                         │
 Fase 3 (Relatórios) ◄─────────┘
     │
-    ├─────────────┐
-    ▼             ▼
-Fase 4        Fase 5
-(Filtros)    (Permissões)
-    │             │
-    └──────┬──────┘
-           ▼
-       Fase 6
-    (Organização)
+    ▼
+Fase 4 (Filtros)
+    │
+    ▼
+Fase 5 (Estilo UI)
+    │
+    ▼
+Fase 6 (Permissões)
+    │
+    ▼
+Fase 7 (Organização)
 ```
 
 ## Como Usar Este Roadmap
@@ -94,8 +98,9 @@ Fase 4        Fase 5
 | 04 | Não iniciada |
 | 05 | Não iniciada |
 | 06 | Não iniciada |
+| 07 | Não iniciada |
 
 ## Próximos Passos
 
-1. **Iniciar Fase 0** - Setup do projeto Next.js
+1. **Iniciar Fase 0** - Setup do projeto Django + React
 2. **Revisar** - Stack técnica definida em `DECISOES_TECNICAS.md`
