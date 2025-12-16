@@ -25,8 +25,9 @@ docs/
     ├── FASE-02-conexoes.md
     ├── FASE-03-relatorios-basicos.md
     ├── FASE-04-filtros.md
-    ├── FASE-05-permissoes.md
-    └── FASE-06-organizacao-ux.md
+    ├── FASE-05-estilo-ui.md
+    ├── FASE-06-permissoes.md
+    └── FASE-07-organizacao-ux.md
 ```
 
 ## Como Usar Esta Documentação
