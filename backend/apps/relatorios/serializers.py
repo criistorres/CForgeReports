@@ -14,7 +14,7 @@ class RelatorioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Relatorio
         fields = [
-            'id', 'nome', 'descricao', 'conexao', 'conexao_nome',
+            'id', 'nome', 'descricao', 'pasta', 'conexao', 'conexao_nome',
             'query_sql', 'ativo', 'limite_linhas_tela',
             'permite_exportar', 'pode_exportar', 'criado_em'
         ]

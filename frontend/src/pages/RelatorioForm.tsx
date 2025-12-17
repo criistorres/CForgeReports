@@ -4,6 +4,7 @@ import api from '../services/api'
 import FiltroForm from '../components/features/FiltroForm'
 import PermissoesForm from '../components/forge/PermissoesForm'
 import type { Filtro } from '../components/features/FiltroForm'
+import type { PastaNode } from '@/components/features/FolderTree'
 import { useAuth } from '../contexts/AuthContext'
 
 interface Conexao {
@@ -14,6 +15,7 @@ interface Conexao {
 interface RelatorioData {
   nome: string
   descricao: string
+  pasta: string
   conexao: string
   query_sql: string
   limite_linhas_tela: number
@@ -28,6 +30,7 @@ export default function RelatorioForm() {
   const isAdmin = user?.role === 'ADMIN'
 
   const [conexoes, setConexoes] = useState<Conexao[]>([])
+  const [pastas, setPastas] = useState<PastaNode[]>([])
   const [loading, setLoading] = useState(false)
   const [testando, setTestando] = useState(false)
   const [error, setError] = useState('')
@@ -39,6 +42,7 @@ export default function RelatorioForm() {
   const [formData, setFormData] = useState<RelatorioData>({
     nome: '',
     descricao: '',
+    pasta: '',
     conexao: '',
     query_sql: 'SELECT ',
     limite_linhas_tela: 1000,
@@ -47,6 +51,7 @@ export default function RelatorioForm() {
 
   useEffect(() => {
     loadConexoes()
+    loadPastas()
     if (isEditing) {
       loadRelatorio()
     }
@@ -61,12 +66,52 @@ export default function RelatorioForm() {
     }
   }
 
+  async function loadPastas() {
+    try {
+      const response = await api.get('/pastas/')
+      setPastas(response.data)
+    } catch (err) {
+      console.error('Erro ao carregar pastas:', err)
+    }
+  }
+
+  // Cria uma lista plana de pastas com seus caminhos completos
+  function getPastasComCaminho(): Array<{ id: string; caminho: string; nivel: number }> {
+    const pastaMap = new Map<string, PastaNode>()
+    pastas.forEach(p => pastaMap.set(p.id, p))
+
+    function getCaminho(pasta: PastaNode, nivel = 0): string {
+      if (!pasta.pasta_pai) {
+        return pasta.nome
+      }
+      const pai = pastaMap.get(pasta.pasta_pai)
+      if (!pai) return pasta.nome
+      return getCaminho(pai, nivel + 1) + ' > ' + pasta.nome
+    }
+
+    function getNivel(pasta: PastaNode): number {
+      if (!pasta.pasta_pai) return 0
+      const pai = pastaMap.get(pasta.pasta_pai)
+      if (!pai) return 0
+      return getNivel(pai) + 1
+    }
+
+    return pastas
+      .map(p => ({
+        id: p.id,
+        caminho: getCaminho(p),
+        nivel: getNivel(p)
+      }))
+      .sort((a, b) => a.caminho.localeCompare(b.caminho))
+  }
+
   async function loadRelatorio() {
     try {
       const response = await api.get(`/relatorios/${id}/`)
       setFormData({
         nome: response.data.nome,
         descricao: response.data.descricao || '',
+        pasta: response.data.pasta || '',
         conexao: response.data.conexao,
         query_sql: response.data.query_sql,
         limite_linhas_tela: response.data.limite_linhas_tela,
@@ -219,6 +264,27 @@ export default function RelatorioForm() {
               className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
               rows={2}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Pasta
+            </label>
+            <select
+              value={formData.pasta}
+              onChange={(e) => setFormData({ ...formData, pasta: e.target.value })}
+              className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
+            >
+              <option value="">Sem pasta (raiz)</option>
+              {getPastasComCaminho().map(({ id, caminho, nivel }) => (
+                <option key={id} value={id}>
+                  {'  '.repeat(nivel)}📁 {caminho}
+                </option>
+              ))}
+            </select>
+            <p className="text-slate-500 text-xs mt-1">
+              Organize seu relatório em pastas para melhor navegação
+            </p>
           </div>
 
           <div>
