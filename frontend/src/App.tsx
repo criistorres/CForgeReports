@@ -7,6 +7,7 @@ import Conexoes from './pages/Conexoes';
 import Relatorios from './pages/Relatorios';
 import RelatorioForm from './pages/RelatorioForm';
 import ExecutarRelatorio from './pages/ExecutarRelatorio';
+import Historico from './pages/Historico';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -72,6 +73,14 @@ function App() {
         element={
           <PrivateRoute>
             <ExecutarRelatorio />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/historico"
+        element={
+          <PrivateRoute>
+            <Historico />
           </PrivateRoute>
         }
       />

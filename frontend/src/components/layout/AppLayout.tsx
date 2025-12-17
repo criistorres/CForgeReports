@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface AppLayoutProps {
@@ -9,12 +9,6 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, sidebar }: AppLayoutProps) {
   const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
 
   return (
     <div className="min-h-screen bg-forge-bg">
@@ -47,6 +41,12 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
                 >
                   Relatórios
                 </Link>
+                <Link
+                  to="/historico"
+                  className="text-slate-300 hover:text-white transition-colors"
+                >
+                  Histórico
+                </Link>
               </nav>
 
               <div className="flex items-center gap-3 border-l border-primary-200 pl-6">
@@ -55,7 +55,7 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
                   <p className="text-xs text-slate-400">{user.email}</p>
                 </div>
                 <button
-                  onClick={handleLogout}
+                  onClick={logout}
                   className="text-sm text-slate-400 hover:text-white transition-colors"
                 >
                   Sair

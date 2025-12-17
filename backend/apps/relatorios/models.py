@@ -2,10 +2,30 @@ import uuid
 from django.db import models
 
 
+class Pasta(models.Model):
+    """
+    Pastas para organizar relatórios em uma estrutura hierárquica.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    empresa = models.ForeignKey('empresas.Empresa', on_delete=models.CASCADE)
+    nome = models.CharField(max_length=255)
+    pasta_pai = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='subpastas')
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'pastas'
+        unique_together = ['empresa', 'pasta_pai', 'nome']
+        ordering = ['nome']
+
+    def __str__(self):
+        return f"{self.nome} ({self.empresa.nome})"
+
+
 class Relatorio(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     empresa = models.ForeignKey('empresas.Empresa', on_delete=models.CASCADE)
     conexao = models.ForeignKey('conexoes.Conexao', on_delete=models.PROTECT)
+    pasta = models.ForeignKey(Pasta, null=True, blank=True, on_delete=models.SET_NULL, related_name='relatorios')
     nome = models.CharField(max_length=255)
     descricao = models.TextField(blank=True)
     query_sql = models.TextField()
@@ -76,3 +96,21 @@ class Permissao(models.Model):
 
     def __str__(self):
         return f"{self.usuario.nome} - {self.relatorio.nome} ({self.nivel})"
+
+
+class Favorito(models.Model):
+    """
+    Relatórios marcados como favoritos pelos usuários.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    usuario = models.ForeignKey('usuarios.Usuario', on_delete=models.CASCADE, related_name='favoritos')
+    relatorio = models.ForeignKey(Relatorio, on_delete=models.CASCADE, related_name='favoritos')
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'favoritos'
+        unique_together = ['usuario', 'relatorio']
+        ordering = ['-criado_em']
+
+    def __str__(self):
+        return f"{self.usuario.nome} - {self.relatorio.nome}"

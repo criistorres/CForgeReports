@@ -2,7 +2,7 @@
 Serializers para a API de Relatórios.
 """
 from rest_framework import serializers
-from .models import Relatorio, Filtro
+from .models import Relatorio, Filtro, Pasta, Favorito
 from services.query_validator import validar_query
 
 
@@ -92,3 +92,33 @@ class SalvarFiltrosSerializer(serializers.Serializer):
                 ordem=i,
                 **filtro_data
             )
+
+
+class PastaSerializer(serializers.ModelSerializer):
+    """Serializer para pastas de organização"""
+    qtd_relatorios = serializers.SerializerMethodField()
+    qtd_subpastas = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Pasta
+        fields = ['id', 'nome', 'pasta_pai', 'criado_em', 'qtd_relatorios', 'qtd_subpastas']
+        read_only_fields = ['id', 'criado_em']
+
+    def get_qtd_relatorios(self, obj):
+        """Retorna quantidade de relatórios na pasta"""
+        return obj.relatorios.filter(ativo=True).count()
+
+    def get_qtd_subpastas(self, obj):
+        """Retorna quantidade de subpastas"""
+        return obj.subpastas.count()
+
+
+class FavoritoSerializer(serializers.ModelSerializer):
+    """Serializer para favoritos"""
+    relatorio_nome = serializers.CharField(source='relatorio.nome', read_only=True)
+    relatorio_descricao = serializers.CharField(source='relatorio.descricao', read_only=True)
+
+    class Meta:
+        model = Favorito
+        fields = ['id', 'relatorio', 'relatorio_nome', 'relatorio_descricao', 'criado_em']
+        read_only_fields = ['id', 'criado_em']

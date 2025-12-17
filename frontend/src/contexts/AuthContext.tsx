@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api';
 import type { Usuario } from '../types';
+import { useInactivityTimeout } from '../hooks/useInactivityTimeout';
 
 interface AuthContextType {
   user: Usuario | null;
@@ -11,6 +12,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// Tempo de inatividade antes do logout automático (15 minutos)
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Usuario | null>(null);
@@ -41,7 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setUser(null);
+    window.location.href = '/login';
   }
+
+  // Hook para detectar inatividade e fazer logout automático
+  useInactivityTimeout({
+    timeout: INACTIVITY_TIMEOUT,
+    onInactive: logout,
+    enabled: !!user, // Só ativa se houver usuário logado
+  });
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>

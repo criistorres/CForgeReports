@@ -14,5 +14,6 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include(router.urls)),
     path('api/', include('apps.conexoes.urls')),
-    path('api/relatorios/', include('apps.relatorios.urls')),
+    path('api/', include('apps.relatorios.urls')),
+    path('api/', include('apps.execucoes.urls')),
 ]

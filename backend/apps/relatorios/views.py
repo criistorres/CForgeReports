@@ -7,20 +7,22 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
 from django.utils import timezone
-from .models import Relatorio
+from django.db import models
+from .models import Relatorio, Pasta, Favorito, Permissao
 from .serializers import (
     RelatorioSerializer,
     ExecutarRelatorioSerializer,
     FiltroSerializer,
     SalvarFiltrosSerializer,
-    RelatorioComFiltrosSerializer
+    RelatorioComFiltrosSerializer,
+    PastaSerializer,
+    FavoritoSerializer
 )
 from core.mixins import EmpresaQuerySetMixin
 from core.permissions import IsTecnicoOrAdmin, IsAdmin
 from services.query_executor import QueryExecutor
 from services.excel_exporter import ExcelExporter
 from services.permissoes import verificar_permissao
-from .models import Permissao
 
 
 class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
@@ -38,12 +40,27 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
 
         # Admin e Técnico veem todos os relatórios
         if user.role in ['ADMIN', 'TECNICO']:
-            return qs.select_related('conexao')
+            qs = qs.select_related('conexao')
+        else:
+            # Usuário comum só vê relatórios com permissão explícita
+            qs = qs.filter(
+                permissoes__usuario=user
+            ).select_related('conexao').distinct()
 
-        # Usuário comum só vê relatórios com permissão explícita
-        return qs.filter(
-            permissoes__usuario=user
-        ).select_related('conexao').distinct()
+        # Filtro de busca por nome/descrição
+        busca = self.request.query_params.get('busca')
+        if busca:
+            qs = qs.filter(
+                models.Q(nome__icontains=busca) |
+                models.Q(descricao__icontains=busca)
+            )
+
+        # Filtro por pasta
+        pasta_id = self.request.query_params.get('pasta_id')
+        if pasta_id:
+            qs = qs.filter(pasta_id=pasta_id)
+
+        return qs
 
     def get_permissions(self):
         """Apenas técnicos e admins podem criar/editar/deletar"""
@@ -217,3 +234,78 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
                 usuario_id=usuario_id
             ).delete()
             return Response({'success': True})
+
+
+class PastaViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de pastas"""
+    serializer_class = PastaSerializer
+    permission_classes = [IsAuthenticated, IsTecnicoOrAdmin]
+
+    def get_queryset(self):
+        """Retorna pastas da empresa do usuário"""
+        return Pasta.objects.filter(empresa_id=self.request.user.empresa_id)
+
+    def perform_create(self, serializer):
+        """Cria pasta vinculada à empresa"""
+        serializer.save(empresa_id=self.request.user.empresa_id)
+
+
+class FavoritoViewSet(viewsets.ViewSet):
+    """ViewSet para gerenciamento de favoritos"""
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        """Lista favoritos do usuário"""
+        favoritos = Favorito.objects.filter(
+            usuario=request.user
+        ).select_related('relatorio')
+
+        data = [
+            {
+                'id': str(f.id),
+                'relatorio_id': str(f.relatorio_id),
+                'relatorio_nome': f.relatorio.nome,
+                'relatorio_descricao': f.relatorio.descricao
+            }
+            for f in favoritos
+        ]
+        return Response(data)
+
+    def create(self, request):
+        """Adiciona relatório aos favoritos"""
+        relatorio_id = request.data.get('relatorio_id')
+
+        if not relatorio_id:
+            return Response(
+                {'erro': 'relatorio_id é obrigatório'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verifica se o relatório existe e o usuário tem acesso
+        try:
+            relatorio = Relatorio.objects.get(
+                id=relatorio_id,
+                empresa_id=request.user.empresa_id,
+                ativo=True
+            )
+        except Relatorio.DoesNotExist:
+            return Response(
+                {'erro': 'Relatório não encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Cria ou recupera favorito
+        favorito, created = Favorito.objects.get_or_create(
+            usuario=request.user,
+            relatorio_id=relatorio_id
+        )
+
+        return Response({'success': True, 'created': created})
+
+    def destroy(self, request, pk=None):
+        """Remove relatório dos favoritos (pk é o relatorio_id)"""
+        Favorito.objects.filter(
+            usuario=request.user,
+            relatorio_id=pk
+        ).delete()
+        return Response({'success': True})
