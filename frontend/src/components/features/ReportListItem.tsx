@@ -10,6 +10,7 @@ export interface Relatorio {
     descricao?: string
     criado_em: string
     ultima_execucao?: string
+    pasta?: string | null
     pasta_id?: string
 }
 

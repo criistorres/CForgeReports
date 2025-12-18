@@ -112,8 +112,9 @@ export default function Dashboard() {
 
     // Adiciona relatórios às pastas
     relatoriosList.forEach(relatorio => {
-      if (relatorio.pasta_id) {
-        const pasta = pastaMap.get(relatorio.pasta_id)
+      const pastaId = relatorio.pasta || relatorio.pasta_id
+      if (pastaId) {
+        const pasta = pastaMap.get(pastaId)
         if (pasta) {
           pasta.relatorios = pasta.relatorios || []
           pasta.relatorios.push({
@@ -358,7 +359,8 @@ export default function Dashboard() {
       })
       lista = Array.from(recentesUnicos.values())
     } else if (viewAtual === 'pasta' && pastaSelecionada) {
-      lista = relatorios.filter(r => r.pasta_id === pastaSelecionada)
+      const pastaId = pastaSelecionada
+      lista = relatorios.filter(r => (r.pasta || r.pasta_id) === pastaId)
     } else {
       lista = relatorios
     }
