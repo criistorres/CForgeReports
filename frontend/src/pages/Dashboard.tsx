@@ -4,6 +4,7 @@ import { Search, Plus, Grid, List, Download, SortAsc, Trash2, Copy, FolderInput 
 import { useAuth } from '@/contexts/AuthContext'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { FolderTree, ReportListItem, Breadcrumb, PastaModal } from '@/components/features'
+import { RelatorioExecutor } from '@/components/features/RelatorioExecutor'
 import { MoverRelatoriosModal, useMoverRelatoriosModal } from '@/components/features/MoverRelatoriosModal'
 import type { PastaNode, ViewType } from '@/components/features/FolderTree'
 import type { Relatorio } from '@/components/features/ReportListItem'
@@ -41,6 +42,7 @@ export default function Dashboard() {
   // Navegação e visualização
   const [viewAtual, setViewAtual] = useState<ViewType>('todos')
   const [pastaSelecionada, setPastaSelecionada] = useState<string | null>(null)
+  const [relatorioSelecionado, setRelatorioSelecionado] = useState<string | null>(null)
   const [layoutType, setLayoutType] = useState<LayoutType>('list')
   const [sortBy, setSortBy] = useState<SortType>('nome')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
@@ -79,12 +81,15 @@ export default function Dashboard() {
       ])
 
       const pastasFlat = pastasRes.data as PastaNode[]
-      const pastasComSubpastas = organizarPastasEmArvore(pastasFlat)
-      setPastas(pastasComSubpastas)
+      const relatoriosList = relatoriosRes.data as Relatorio[]
 
-      setRelatorios(relatoriosRes.data)
+      // Organiza pastas em árvore e adiciona relatórios
+      const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, relatoriosList)
+      setPastas(pastasComRelatorios)
 
-      const favIds = new Set(favoritosRes.data.map((f: any) => f.relatorio_id))
+      setRelatorios(relatoriosList)
+
+      const favIds = new Set<string>(favoritosRes.data.map((f: any) => f.relatorio_id))
       setFavoritos(favIds)
 
       setRecentes(recentesRes.data)
@@ -96,14 +101,31 @@ export default function Dashboard() {
     }
   }
 
-  // Organiza pastas em estrutura de árvore
-  const organizarPastasEmArvore = useCallback((pastasFlat: PastaNode[]): PastaNode[] => {
+  // Organiza pastas em estrutura de árvore e adiciona relatórios a cada pasta
+  const organizarPastasComRelatorios = useCallback((pastasFlat: PastaNode[], relatoriosList: Relatorio[]): PastaNode[] => {
     const pastaMap = new Map<string, PastaNode>()
 
+    // Cria mapa de pastas
     pastasFlat.forEach(pasta => {
-      pastaMap.set(pasta.id, { ...pasta, subpastas: [] })
+      pastaMap.set(pasta.id, { ...pasta, subpastas: [], relatorios: [] })
     })
 
+    // Adiciona relatórios às pastas
+    relatoriosList.forEach(relatorio => {
+      if (relatorio.pasta_id) {
+        const pasta = pastaMap.get(relatorio.pasta_id)
+        if (pasta) {
+          pasta.relatorios = pasta.relatorios || []
+          pasta.relatorios.push({
+            id: relatorio.id,
+            nome: relatorio.nome,
+            descricao: relatorio.descricao
+          })
+        }
+      }
+    })
+
+    // Monta árvore
     const pastasRaiz: PastaNode[] = []
 
     pastasFlat.forEach(pasta => {
@@ -122,10 +144,10 @@ export default function Dashboard() {
     return pastasRaiz
   }, [])
 
-  // Carrega relatórios por pasta
+  // Carrega relatórios por pasta (quando necessário)
   useEffect(() => {
     const carregarRelatoriosPorPasta = async () => {
-      if (viewAtual === 'pasta' && pastaSelecionada) {
+      if (viewAtual === 'pasta' && pastaSelecionada && !relatorioSelecionado) {
         setLoadingRelatorios(true)
         try {
           const res = await api.get(`/relatorios/?pasta_id=${pastaSelecionada}`)
@@ -135,7 +157,7 @@ export default function Dashboard() {
         } finally {
           setLoadingRelatorios(false)
         }
-      } else if (viewAtual === 'todos') {
+      } else if (viewAtual === 'todos' && !relatorioSelecionado) {
         setLoadingRelatorios(true)
         try {
           const res = await api.get('/relatorios/')
@@ -149,30 +171,38 @@ export default function Dashboard() {
     }
 
     carregarRelatoriosPorPasta()
-  }, [pastaSelecionada, viewAtual])
+  }, [pastaSelecionada, viewAtual, relatorioSelecionado])
 
   // Handlers de navegação
   const handleSelectPasta = useCallback((pastaId: string | null) => {
     setPastaSelecionada(pastaId)
+    setRelatorioSelecionado(null) // Limpa seleção de relatório
     setViewAtual(pastaId ? 'pasta' : 'todos')
-    setModoSelecao(false)
-    setRelatoriosSelecionados(new Set())
   }, [])
 
+  const handleSelectRelatorio = useCallback((relatorioId: string) => {
+    setRelatorioSelecionado(relatorioId)
+    setViewAtual('relatorio')
+  }, [])
+
+  const handleFecharRelatorio = useCallback(() => {
+    setRelatorioSelecionado(null)
+    setViewAtual(pastaSelecionada ? 'pasta' : 'todos')
+  }, [pastaSelecionada])
+
   const handleSelectFavoritos = useCallback(() => {
-    setViewAtual('favoritos')
     setPastaSelecionada(null)
-    setModoSelecao(false)
-    setRelatoriosSelecionados(new Set())
+    setRelatorioSelecionado(null)
+    setViewAtual('favoritos')
   }, [])
 
   const handleSelectRecentes = useCallback(() => {
-    setViewAtual('recentes')
     setPastaSelecionada(null)
-    setModoSelecao(false)
-    setRelatoriosSelecionados(new Set())
+    setRelatorioSelecionado(null)
+    setViewAtual('recentes')
   }, [])
 
+  // Favoritos
   const handleToggleFavorito = async (relatorioId: string, novoEstado: boolean) => {
     try {
       if (novoEstado) {
@@ -194,47 +224,45 @@ export default function Dashboard() {
     }
   }
 
-  // Handlers de gerenciamento de pastas
-  const handleCriarPasta = useCallback((pastaPai?: string | null) => {
+  // Gerenciamento de pastas
+  const handleCriarPasta = (pastaPai: string | null = null) => {
     setPastaEditando(null)
-    setPastaPaiNova(pastaPai || null)
+    setPastaPaiNova(pastaPai)
     setModalPastaAberto(true)
-  }, [])
+  }
 
-  const handleEditarPasta = useCallback((pasta: PastaNode) => {
+  const handleEditarPasta = (pasta: PastaNode) => {
     setPastaEditando(pasta)
     setPastaPaiNova(null)
     setModalPastaAberto(true)
-  }, [])
+  }
 
   const handleExcluirPasta = async (pasta: PastaNode) => {
-    if (!confirm(`Tem certeza que deseja excluir a pasta "${pasta.nome}"?`)) {
+    if (!confirm(`Excluir a pasta "${pasta.nome}"?`)) return
+
+    if (pasta.qtd_relatorios > 0 || pasta.qtd_subpastas > 0) {
+      showToast('Não é possível excluir pasta com relatórios ou subpastas. Mova ou exclua o conteúdo primeiro.', 'error')
       return
     }
 
     try {
       await api.delete(`/pastas/${pasta.id}/`)
-      const pastasRes = await api.get('/pastas/')
-      const pastasFlat = pastasRes.data as PastaNode[]
-      const pastasComSubpastas = organizarPastasEmArvore(pastasFlat)
-      setPastas(pastasComSubpastas)
-
-      if (pastaSelecionada === pasta.id) {
-        handleSelectPasta(null)
-      }
-
+      const res = await api.get('/pastas/')
+      const pastasFlat = res.data as PastaNode[]
+      const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, relatorios)
+      setPastas(pastasComRelatorios)
       showToast('Pasta excluída com sucesso', 'success')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao excluir pasta:', error)
-      showToast('Erro ao excluir pasta. Verifique se ela não possui relatórios.', 'error')
+      showToast(error.response?.data?.erro || 'Erro ao excluir pasta. Verifique se ela não possui relatórios.', 'error')
     }
   }
 
   const handleSucessoPasta = async () => {
     const pastasRes = await api.get('/pastas/')
     const pastasFlat = pastasRes.data as PastaNode[]
-    const pastasComSubpastas = organizarPastasEmArvore(pastasFlat)
-    setPastas(pastasComSubpastas)
+    const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, relatorios)
+    setPastas(pastasComRelatorios)
   }
 
   // Seleção múltipla
@@ -296,6 +324,12 @@ export default function Dashboard() {
       setRelatoriosSelecionados(new Set())
       setModoSelecao(false)
       showToast('Relatórios movidos com sucesso', 'success')
+
+      // Atualiza árvore de pastas
+      const pastasRes = await api.get('/pastas/')
+      const pastasFlat = pastasRes.data as PastaNode[]
+      const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, res.data)
+      setPastas(pastasComRelatorios)
     } catch (error) {
       console.error('Erro ao mover relatórios:', error)
       showToast('Erro ao mover alguns relatórios', 'error')
@@ -317,49 +351,40 @@ export default function Dashboard() {
             id: exec.relatorio_id,
             nome: exec.relatorio_nome,
             descricao: exec.relatorio_descricao || '',
-            criado_em: '',
+            criado_em: exec.iniciado_em,
             ultima_execucao: exec.iniciado_em
           })
         }
       })
       lista = Array.from(recentesUnicos.values())
+    } else if (viewAtual === 'pasta' && pastaSelecionada) {
+      lista = relatorios.filter(r => r.pasta_id === pastaSelecionada)
     } else {
       lista = relatorios
     }
 
-    // Aplica busca
+    // Filtro de busca
     if (buscaDebounced) {
-      const termoBusca = buscaDebounced.toLowerCase()
+      const termo = buscaDebounced.toLowerCase()
       lista = lista.filter(r =>
-        r.nome.toLowerCase().includes(termoBusca) ||
-        r.descricao?.toLowerCase().includes(termoBusca)
+        r.nome.toLowerCase().includes(termo) ||
+        r.descricao?.toLowerCase().includes(termo)
       )
     }
 
-    // Aplica filtro de data
-    if (filtroData !== 'todos' && viewAtual === 'recentes') {
+    // Filtro de data
+    if (filtroData !== 'todos') {
       const agora = new Date()
-      let dataLimite = new Date()
-
-      switch (filtroData) {
-        case 'hoje':
-          dataLimite.setHours(0, 0, 0, 0)
-          break
-        case 'semana':
-          dataLimite.setDate(agora.getDate() - 7)
-          break
-        case 'mes':
-          dataLimite.setMonth(agora.getMonth() - 1)
-          break
+      const milisegundos = {
+        hoje: 24 * 60 * 60 * 1000,
+        semana: 7 * 24 * 60 * 60 * 1000,
+        mes: 30 * 24 * 60 * 60 * 1000
       }
-
-      lista = lista.filter(r => {
-        if (!r.ultima_execucao) return false
-        return new Date(r.ultima_execucao) >= dataLimite
-      })
+      const limite = new Date(agora.getTime() - milisegundos[filtroData])
+      lista = lista.filter(r => new Date(r.criado_em) >= limite)
     }
 
-    // Ordena
+    // Ordenação
     lista.sort((a, b) => {
       let comparison = 0
 
@@ -368,7 +393,7 @@ export default function Dashboard() {
           comparison = a.nome.localeCompare(b.nome)
           break
         case 'data':
-          comparison = new Date(a.criado_em || 0).getTime() - new Date(b.criado_em || 0).getTime()
+          comparison = new Date(a.criado_em).getTime() - new Date(b.criado_em).getTime()
           break
         case 'execucoes':
           comparison = (a.ultima_execucao ? 1 : 0) - (b.ultima_execucao ? 1 : 0)
@@ -379,7 +404,7 @@ export default function Dashboard() {
     })
 
     return lista
-  }, [relatorios, favoritos, recentes, viewAtual, buscaDebounced, sortBy, sortOrder, filtroData])
+  }, [relatorios, favoritos, recentes, viewAtual, buscaDebounced, sortBy, sortOrder, filtroData, pastaSelecionada])
 
   // Breadcrumb
   const breadcrumbItems = useMemo(() => {
@@ -403,6 +428,8 @@ export default function Dashboard() {
 
   // Título da seção
   const tituloSecao = useMemo(() => {
+    if (viewAtual === 'relatorio') return 'Execução de Relatório'
+
     switch (viewAtual) {
       case 'favoritos':
         return '⭐ Favoritos'
@@ -414,16 +441,6 @@ export default function Dashboard() {
         return '📊 Todos os Relatórios'
     }
   }, [viewAtual, breadcrumbItems])
-
-  // Estatísticas
-  const estatisticas = useMemo(() => {
-    return {
-      total: relatorios.length,
-      favoritos: favoritos.size,
-      recentes: recentes.length,
-      executados: relatorios.filter(r => r.ultima_execucao).length
-    }
-  }, [relatorios, favoritos, recentes])
 
   // Exportar dados
   const handleExportar = () => {
@@ -472,11 +489,13 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="flex h-[calc(100vh-64px)]">
-        {/* Sidebar - Árvore de Pastas */}
+        {/* Sidebar - Árvore de Pastas com Relatórios */}
         <FolderTree
           pastas={pastas}
           pastaSelecionada={pastaSelecionada}
+          relatorioSelecionado={relatorioSelecionado}
           onSelectPasta={handleSelectPasta}
+          onSelectRelatorio={handleSelectRelatorio}
           onSelectFavoritos={handleSelectFavoritos}
           onSelectRecentes={handleSelectRecentes}
           viewAtual={viewAtual}
@@ -487,208 +506,187 @@ export default function Dashboard() {
 
         {/* Área Principal */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="p-6 border-b border-slate-700/50 bg-slate-800/30">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                {viewAtual === 'pasta' && breadcrumbItems.length > 0 && (
-                  <Breadcrumb items={breadcrumbItems} onNavigate={handleSelectPasta} />
-                )}
-                <h1 className="text-2xl font-bold text-white mt-2 flex items-center gap-2">
-                  {tituloSecao}
-                  <span className="text-sm font-normal text-slate-400">
-                    ({relatoriosFiltrados.length})
-                  </span>
-                </h1>
+          {/* Se um relatório está selecionado, mostra o executor */}
+          {viewAtual === 'relatorio' && relatorioSelecionado ? (
+            <RelatorioExecutor
+              relatorioId={relatorioSelecionado}
+              onClose={handleFecharRelatorio}
+            />
+          ) : (
+            <>
+              {/* Header */}
+              <div className="p-6 border-b border-slate-700/50 bg-slate-800/30">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1">
+                    {viewAtual === 'pasta' && breadcrumbItems.length > 0 && (
+                      <Breadcrumb items={breadcrumbItems} onNavigate={handleSelectPasta} />
+                    )}
+                    <h1 className="text-2xl font-bold text-white mt-2 flex items-center gap-2">
+                      {tituloSecao}
+                      <span className="text-sm font-normal text-slate-400">
+                        ({relatoriosFiltrados.length})
+                      </span>
+                    </h1>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex items-center gap-3">
+                    {/* Botão de criar novo relatório */}
+                    <button
+                      onClick={() => navigate('/relatorios/novo')}
+                      className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Novo Relatório
+                    </button>
+
+                    {/* Modo seleção */}
+                    {!modoSelecao ? (
+                      <button
+                        onClick={() => setModoSelecao(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                      >
+                        <Copy className="w-5 h-5" />
+                        Selecionar
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            setModoSelecao(false)
+                            setRelatoriosSelecionados(new Set())
+                          }}
+                          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => modalMover.abrir()}
+                          disabled={relatoriosSelecionados.size === 0}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                        >
+                          <FolderInput className="w-5 h-5" />
+                          Mover ({relatoriosSelecionados.size})
+                        </button>
+                        <button
+                          onClick={handleExcluirSelecionados}
+                          disabled={relatoriosSelecionados.size === 0}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                          Excluir ({relatoriosSelecionados.size})
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Barra de ferramentas */}
+                <div className="flex items-center gap-3">
+                  {/* Busca */}
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar relatórios..."
+                      value={busca}
+                      onChange={(e) => setBusca(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors"
+                    />
+                  </div>
+
+                  {/* Ordenação */}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortType)}
+                    className="px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
+                  >
+                    <option value="nome">Nome</option>
+                    <option value="data">Data de criação</option>
+                    <option value="execucoes">Últimas execuções</option>
+                  </select>
+
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="p-2 bg-slate-700/50 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors"
+                  >
+                    <SortAsc className={`w-5 h-5 text-white ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Layout */}
+                  <div className="flex items-center gap-1 bg-slate-700/50 border border-slate-600 rounded-lg p-1">
+                    <button
+                      onClick={() => setLayoutType('list')}
+                      className={`p-2 rounded ${layoutType === 'list' ? 'bg-primary-600' : 'hover:bg-slate-600'}`}
+                    >
+                      <List className="w-5 h-5 text-white" />
+                    </button>
+                    <button
+                      onClick={() => setLayoutType('grid')}
+                      className={`p-2 rounded ${layoutType === 'grid' ? 'bg-primary-600' : 'hover:bg-slate-600'}`}
+                    >
+                      <Grid className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleExportar}
+                    className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors text-white"
+                  >
+                    <Download className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
-              {/* Ações */}
-              <div className="flex items-center gap-2">
-                {modoSelecao && relatoriosSelecionados.size > 0 && (
+              {/* Lista de relatórios */}
+              <div ref={listaRef} className="flex-1 overflow-y-auto p-6">
+                {loadingRelatorios ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : relatoriosFiltrados.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                    <p className="text-lg mb-2">
+                      {busca ? 'Nenhum relatório encontrado' : 'Nenhum relatório nesta pasta'}
+                    </p>
+                    {viewAtual === 'favoritos' && !busca && (
+                      <p className="text-sm">Clique na ⭐ para adicionar relatórios aos favoritos</p>
+                    )}
+                  </div>
+                ) : (
                   <>
-                    <button
-                      onClick={handleExcluirSelecionados}
-                      className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors text-sm"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Excluir ({relatoriosSelecionados.size})
-                    </button>
-                    <button
-                      onClick={modalMover.abrir}
-                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm"
-                    >
-                      <FolderInput className="w-4 h-4" />
-                      Mover
-                    </button>
+                    {modoSelecao && (
+                      <div className="mb-4 flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={relatoriosSelecionados.size === relatoriosFiltrados.length}
+                          onChange={handleSelecionarTodos}
+                          className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-slate-400">
+                          Selecionar todos ({relatoriosFiltrados.length})
+                        </span>
+                      </div>
+                    )}
+
+                    <div className={layoutType === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-2'}>
+                      {relatoriosFiltrados.map(relatorio => (
+                        <ReportListItem
+                          key={relatorio.id}
+                          relatorio={relatorio}
+                          isFavorito={favoritos.has(relatorio.id)}
+                          onToggleFavorito={handleToggleFavorito}
+                          isSelected={modoSelecao && relatoriosSelecionados.has(relatorio.id)}
+                          onToggleSelect={modoSelecao ? () => handleToggleSelecao(relatorio.id) : undefined}
+                          layoutType={layoutType}
+                        />
+                      ))}
+                    </div>
                   </>
                 )}
-
-                <button
-                  onClick={() => setModoSelecao(!modoSelecao)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${modoSelecao
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-                    }`}
-                >
-                  <Copy className="w-4 h-4" />
-                  {modoSelecao ? 'Cancelar' : 'Selecionar'}
-                </button>
-
-                {(user?.role === 'ADMIN' || user?.role === 'TECNICO') && (
-                  <button
-                    onClick={() => navigate('/relatorios/novo')}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Novo Relatório
-                  </button>
-                )}
               </div>
-            </div>
-
-            {/* Estatísticas rápidas */}
-            <div className="grid grid-cols-4 gap-4 mb-4">
-              <div className="bg-slate-700/30 rounded-lg p-3">
-                <p className="text-xs text-slate-400">Total</p>
-                <p className="text-2xl font-bold text-white">{estatisticas.total}</p>
-              </div>
-              <div className="bg-slate-700/30 rounded-lg p-3">
-                <p className="text-xs text-slate-400">Favoritos</p>
-                <p className="text-2xl font-bold text-yellow-400">{estatisticas.favoritos}</p>
-              </div>
-              <div className="bg-slate-700/30 rounded-lg p-3">
-                <p className="text-xs text-slate-400">Executados</p>
-                <p className="text-2xl font-bold text-green-400">{estatisticas.executados}</p>
-              </div>
-              <div className="bg-slate-700/30 rounded-lg p-3">
-                <p className="text-xs text-slate-400">Recentes</p>
-                <p className="text-2xl font-bold text-blue-400">{estatisticas.recentes}</p>
-              </div>
-            </div>
-
-            {/* Barra de ferramentas */}
-            <div className="flex items-center gap-3">
-              {/* Busca */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar relatórios..."
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-primary-500 focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Filtros */}
-              {viewAtual === 'recentes' && (
-                <select
-                  value={filtroData}
-                  onChange={(e) => setFiltroData(e.target.value as any)}
-                  className="px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors"
-                >
-                  <option value="todos">Todos</option>
-                  <option value="hoje">Hoje</option>
-                  <option value="semana">Última semana</option>
-                  <option value="mes">Último mês</option>
-                </select>
-              )}
-
-              {/* Ordenação */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortType)}
-                className="px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors"
-              >
-                <option value="nome">Nome</option>
-                <option value="data">Data de criação</option>
-                <option value="execucoes">Execuções</option>
-              </select>
-
-              <button
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors"
-                title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
-              >
-                <SortAsc className={`w-4 h-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Layout toggle */}
-              <div className="flex bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setLayoutType('list')}
-                  className={`p-2 transition-colors ${layoutType === 'list' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setLayoutType('grid')}
-                  className={`p-2 transition-colors ${layoutType === 'grid' ? 'bg-primary-600 text-white' : 'text-slate-400 hover:text-white'
-                    }`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Exportar */}
-              <button
-                onClick={handleExportar}
-                className="p-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors"
-                title="Exportar CSV"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Lista de Relatórios */}
-          <div className="flex-1 overflow-y-auto p-6" ref={listaRef}>
-            {loadingRelatorios ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : relatoriosFiltrados.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                <p className="text-lg mb-2">
-                  {busca ? 'Nenhum relatório encontrado' : 'Nenhum relatório nesta pasta'}
-                </p>
-                {viewAtual === 'favoritos' && !busca && (
-                  <p className="text-sm">Clique na ⭐ para adicionar relatórios aos favoritos</p>
-                )}
-              </div>
-            ) : (
-              <>
-                {modoSelecao && (
-                  <div className="mb-4 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={relatoriosSelecionados.size === relatoriosFiltrados.length}
-                      onChange={handleSelecionarTodos}
-                      className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-slate-400">
-                      Selecionar todos ({relatoriosFiltrados.length})
-                    </span>
-                  </div>
-                )}
-
-                <div className={layoutType === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-2'}>
-                  {relatoriosFiltrados.map(relatorio => (
-                    <ReportListItem
-                      key={relatorio.id}
-                      relatorio={relatorio}
-                      isFavorito={favoritos.has(relatorio.id)}
-                      onToggleFavorito={handleToggleFavorito}
-                      isSelected={modoSelecao && relatoriosSelecionados.has(relatorio.id)}
-                      onToggleSelect={modoSelecao ? () => handleToggleSelecao(relatorio.id) : undefined}
-                      layoutType={layoutType}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 
