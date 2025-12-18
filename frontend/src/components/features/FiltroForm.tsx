@@ -26,7 +26,7 @@ function FiltroForm({ filtros, onChange }: FiltroFormProps) {
 
   const adicionarFiltro = () => {
     const novoFiltro: Filtro = {
-      parametro: '@',
+      parametro: '',
       label: '',
       tipo: 'TEXTO',
       obrigatorio: false,
@@ -108,8 +108,15 @@ function FiltroForm({ filtros, onChange }: FiltroFormProps) {
                   value={filtro.parametro}
                   onChange={e => updateFiltro(idx, 'parametro', e.target.value)}
                   placeholder="@parametro"
-                  className="w-full bg-slate-600 p-2 rounded text-white text-sm"
+                  className={`w-full bg-slate-600 p-2 rounded text-white text-sm ${
+                    (!filtro.parametro || filtro.parametro === '@')
+                      ? 'border-2 border-red-500'
+                      : 'border border-slate-600'
+                  }`}
                 />
+                {(!filtro.parametro || filtro.parametro === '@') && (
+                  <span className="text-red-400 text-xs">Obrigatório</span>
+                )}
               </div>
 
               {/* Label */}

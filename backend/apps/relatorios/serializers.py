@@ -62,6 +62,23 @@ class FiltroSerializer(serializers.ModelSerializer):
         fields = ['id', 'parametro', 'label', 'tipo', 'obrigatorio', 'valor_padrao', 'opcoes', 'ordem']
         read_only_fields = ['id']
 
+    def validate_parametro(self, value):
+        """Valida se o parâmetro está em formato correto"""
+        if not value or value.strip() == '':
+            raise serializers.ValidationError('O parâmetro não pode estar vazio')
+
+        if value == '@':
+            raise serializers.ValidationError('O parâmetro não pode ser apenas "@". Use um nome completo como "@usuarios"')
+
+        if not value.startswith('@'):
+            raise serializers.ValidationError('O parâmetro deve começar com "@"')
+
+        # Verifica se tem apenas @ seguido de espaços ou caracteres inválidos
+        if len(value.strip()) <= 1:
+            raise serializers.ValidationError('O parâmetro deve ter um nome após o "@"')
+
+        return value.strip()
+
 
 class RelatorioComFiltrosSerializer(RelatorioSerializer):
     """Serializer de relatório incluindo seus filtros"""
@@ -87,10 +104,13 @@ class SalvarFiltrosSerializer(serializers.Serializer):
 
         # Criar novos filtros
         for i, filtro_data in enumerate(self.validated_data['filtros']):
+            # Remove campos 'id' e 'ordem' se existirem, pois estamos criando novos filtros
+            filtro_data_limpo = {k: v for k, v in filtro_data.items() if k not in ['id', 'ordem']}
+
             Filtro.objects.create(
                 relatorio=relatorio,
                 ordem=i,
-                **filtro_data
+                **filtro_data_limpo
             )
 
 
