@@ -3,6 +3,7 @@ import {
   ChevronRight, ChevronDown, Folder, FolderOpen, Star, Clock,
   Plus, MoreVertical, Edit, Trash2, FolderPlus, FileText, Play
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export interface PastaNode {
   id: string
@@ -34,6 +35,7 @@ interface FolderTreeProps {
   onCriarPasta: (pastaPai?: string | null) => void
   onEditarPasta: (pasta: PastaNode) => void
   onExcluirPasta: (pasta: PastaNode) => void
+  isAdmin?: boolean
 }
 
 interface FolderItemProps {
@@ -48,6 +50,7 @@ interface FolderItemProps {
   onCriarSubpasta: (pastaPai: string) => void
   onEditar: (pasta: PastaNode) => void
   onExcluir: (pasta: PastaNode) => void
+  isAdmin?: boolean
 }
 
 interface RelatorioItemProps {
@@ -55,9 +58,12 @@ interface RelatorioItemProps {
   nivel: number
   isSelected: boolean
   onSelect: (relatorioId: string) => void
+  isAdmin?: boolean
 }
 
-function RelatorioItem({ relatorio, nivel, isSelected, onSelect }: RelatorioItemProps) {
+function RelatorioItem({ relatorio, nivel, isSelected, onSelect, isAdmin }: RelatorioItemProps) {
+  const navigate = useNavigate()
+
   return (
     <div
       className={`
@@ -76,16 +82,30 @@ function RelatorioItem({ relatorio, nivel, isSelected, onSelect }: RelatorioItem
         {relatorio.nome}
       </span>
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onSelect(relatorio.id)
-        }}
-        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary-600 rounded transition-all"
-        title="Executar relatório"
-      >
-        <Play className="w-3 h-3 text-primary-400" />
-      </button>
+      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all">
+        {isAdmin && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(`/relatorios/${relatorio.id}/editar`)
+            }}
+            className="p-1 hover:bg-slate-600 rounded mr-1"
+            title="Editar relatório"
+          >
+            <Edit className="w-3 h-3 text-slate-400 hover:text-white" />
+          </button>
+        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelect(relatorio.id)
+          }}
+          className="p-1 hover:bg-primary-600 rounded"
+          title="Executar relatório"
+        >
+          <Play className="w-3 h-3 text-primary-400" />
+        </button>
+      </div>
     </div>
   )
 }
@@ -101,7 +121,8 @@ function FolderItem({
   onToggleExpand,
   onCriarSubpasta,
   onEditar,
-  onExcluir
+  onExcluir,
+  isAdmin
 }: FolderItemProps) {
   const [showMenu, setShowMenu] = useState(false)
   const isExpanded = expandedFolders.has(pasta.id)
@@ -229,6 +250,7 @@ function FolderItem({
                   nivel={nivel + 1}
                   isSelected={relatorioSelecionado === relatorio.id}
                   onSelect={onSelectRelatorio}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>
@@ -251,6 +273,7 @@ function FolderItem({
                   onCriarSubpasta={onCriarSubpasta}
                   onEditar={onEditar}
                   onExcluir={onExcluir}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>
@@ -272,7 +295,8 @@ export function FolderTree({
   viewAtual,
   onCriarPasta,
   onEditarPasta,
-  onExcluirPasta
+  onExcluirPasta,
+  isAdmin
 }: FolderTreeProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
 
@@ -374,6 +398,7 @@ export function FolderTree({
                   onCriarSubpasta={(pastaId) => onCriarPasta(pastaId)}
                   onEditar={onEditarPasta}
                   onExcluir={onExcluirPasta}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>

@@ -504,6 +504,7 @@ export default function Dashboard() {
           onCriarPasta={handleCriarPasta}
           onEditarPasta={handleEditarPasta}
           onExcluirPasta={handleExcluirPasta}
+          isAdmin={user?.role === 'ADMIN'}
         />
 
         {/* Área Principal */}
