@@ -490,7 +490,7 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-64px)]">
+      <div className="flex h-[calc(100vh-64px)] overflow-hidden">
         {/* Sidebar - Árvore de Pastas com Relatórios */}
         <FolderTree
           pastas={pastas}
@@ -507,7 +507,7 @@ export default function Dashboard() {
         />
 
         {/* Área Principal */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Se um relatório está selecionado, mostra o executor */}
           {viewAtual === 'relatorio' && relatorioSelecionado ? (
             <RelatorioExecutor

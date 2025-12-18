@@ -17,17 +17,28 @@ class ExcelExporter:
 
         Args:
             relatorio: Instância do modelo Relatorio
-            filtros: Dicionário com filtros aplicados (para fase 4)
+            filtros: Dicionário com filtros aplicados
 
         Returns:
             BytesIO com o arquivo Excel
         """
         from services.database_connector import DatabaseConnector
+        from services.query_params import substituir_parametros
+
+        # Buscar filtros do relatório
+        filtros_objetos = list(relatorio.filtros.all())
+
+        # Substituir parâmetros na query se houver filtros
+        query = relatorio.query_sql
+        if filtros_objetos and filtros:
+            query, erro = substituir_parametros(query, filtros_objetos, filtros)
+            if erro:
+                raise ValueError(erro)
 
         connector = DatabaseConnector(relatorio.conexao)
         conn = connector.get_connection()
 
-        df = pd.read_sql(relatorio.query_sql, conn)
+        df = pd.read_sql(query, conn)
         conn.close()
 
         # Remover timezone de colunas datetime para compatibilidade com Excel

@@ -30,6 +30,12 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
     serializer_class = RelatorioSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_class(self):
+        """Usa RelatorioComFiltrosSerializer quando buscar um relatório específico"""
+        if self.action == 'retrieve':
+            return RelatorioComFiltrosSerializer
+        return RelatorioSerializer
+
     def get_queryset(self):
         """Retorna apenas relatórios ativos da empresa do usuário"""
         user = self.request.user
@@ -125,8 +131,13 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
             )
 
         try:
+            # Pegar filtros do request
+            serializer = ExecutarRelatorioSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            filtros = serializer.validated_data.get('filtros', {})
+
             exporter = ExcelExporter()
-            excel_file = exporter.exportar(relatorio)
+            excel_file = exporter.exportar(relatorio, filtros=filtros)
 
             timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
             filename = f"{relatorio.nome}_{timestamp}.xlsx"

@@ -115,7 +115,7 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex overflow-hidden">
         {/* Sidebar (opcional) */}
         {sidebar && (
           <aside className="w-64 min-h-[calc(100vh-4rem)] border-r border-slate-700/50 p-4 bg-slate-900/30">
@@ -124,7 +124,7 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
         )}
 
         {/* Main content */}
-        <main className="flex-1">
+        <main className="flex-1 overflow-hidden">
           {children}
         </main>
       </div>

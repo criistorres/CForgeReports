@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Play, Download, Clock, X, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import api from '@/services/api'
 import { useToast } from '@/hooks/useToast'
+import { DataTable } from './DataTable'
 
 interface Filtro {
   id: string
@@ -20,6 +21,8 @@ interface Relatorio {
   query: string
   filtros: Filtro[]
   conexao_id: string
+  pode_exportar: boolean
+  permite_exportar: boolean
 }
 
 interface RelatorioExecutorProps {
@@ -43,20 +46,67 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
     carregarRelatorio()
   }, [relatorioId])
 
+  // Função centralizada para executar o relatório
+  const executarRelatorioInternal = async (valoresParaExecutar: Record<string, string>, relatorioAtual: Relatorio) => {
+    try {
+      setExecutando(true)
+      setErro(null)
+      const inicio = Date.now()
+
+      const response = await api.post(`/relatorios/${relatorioAtual.id}/executar/`, {
+        filtros: valoresParaExecutar
+      })
+
+      const fim = Date.now()
+      const resultado = response.data
+
+      // Verificar se a execução foi bem-sucedida
+      if (!resultado.sucesso) {
+        throw new Error(resultado.erro || 'Erro ao executar relatório')
+      }
+
+      // Verificar se os dados existem
+      if (!resultado.dados || !Array.isArray(resultado.dados)) {
+        throw new Error('Resposta do servidor sem dados válidos')
+      }
+
+      setTempoExecucao(resultado.tempo_ms || (fim - inicio))
+      setResultado(resultado.dados)
+      showToast(`Relatório executado com sucesso! ${resultado.dados.length} linhas retornadas`, 'success')
+    } catch (error: any) {
+      console.error('Erro ao executar relatório:', error)
+      const erroMsg = error.response?.data?.erro || error.message || 'Erro desconhecido ao executar relatório'
+      setErro(erroMsg)
+      showToast(erroMsg, 'error')
+    } finally {
+      setExecutando(false)
+    }
+  }
+
   const carregarRelatorio = async () => {
     try {
       setLoading(true)
+      setResultado(null)
+      setErro(null)
       const response = await api.get(`/relatorios/${relatorioId}/`)
-      setRelatorio(response.data)
+      const relatorioData = response.data
+      setRelatorio(relatorioData)
 
-      // Inicializar valores com defaults
+      // Inicializar valores com defaults ou vazio
       const valoresIniciais: Record<string, string> = {}
-      response.data.filtros?.forEach((filtro: Filtro) => {
-        if (filtro.valor_padrao) {
-          valoresIniciais[filtro.parametro] = filtro.valor_padrao
-        }
+      relatorioData.filtros?.forEach((filtro: Filtro) => {
+        valoresIniciais[filtro.parametro] = filtro.valor_padrao || ''
       })
       setValores(valoresIniciais)
+
+      // Executar automaticamente APENAS se não houver nenhum filtro
+      const temFiltros = relatorioData.filtros && relatorioData.filtros.length > 0
+
+      // Executar automaticamente se não houver filtros
+      if (!temFiltros) {
+        executarRelatorioInternal(valoresIniciais, relatorioData)
+      }
+
     } catch (error) {
       console.error('Erro ao carregar relatório:', error)
       showToast('Erro ao carregar relatório', 'error')
@@ -77,26 +127,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
       }
     }
 
-    try {
-      setExecutando(true)
-      setErro(null)
-      const inicio = Date.now()
-
-      const response = await api.post(`/relatorios/${relatorioId}/executar/`, {
-        filtros: valores
-      })
-
-      const fim = Date.now()
-      setTempoExecucao(fim - inicio)
-      setResultado(response.data.dados)
-      showToast(`Relatório executado com sucesso! ${response.data.dados.length} linhas retornadas`, 'success')
-    } catch (error: any) {
-      console.error('Erro ao executar relatório:', error)
-      setErro(error.response?.data?.erro || 'Erro desconhecido ao executar relatório')
-      showToast('Erro ao executar relatório', 'error')
-    } finally {
-      setExecutando(false)
-    }
+    await executarRelatorioInternal(valores, relatorio)
   }
 
   const handleExportarExcel = async () => {
@@ -220,9 +251,9 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-900/50">
+    <div className="h-full flex flex-col bg-slate-900/50 min-w-0 overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-slate-700/50 bg-slate-800/30">
+      <div className="p-6 border-b border-slate-700/50 bg-slate-800/30 min-w-0">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-white">{relatorio.nome}</h2>
@@ -239,11 +270,11 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
         </div>
       </div>
 
-      {/* Área de conteúdo com scroll */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      {/* Área de conteúdo com scroll vertical apenas */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-6 min-w-0">
         {/* Filtros */}
         {relatorio.filtros && relatorio.filtros.length > 0 && (
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 min-w-0">
             <h3 className="text-lg font-semibold text-white mb-4">Filtros</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {relatorio.filtros.map((filtro) => (
@@ -257,7 +288,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
               ))}
             </div>
 
-            {/* Botões de ação */}
+            {/* Botão Executar */}
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleExecutar}
@@ -276,17 +307,20 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
                   </>
                 )}
               </button>
-
-              {resultado && (
-                <button
-                  onClick={handleExportarExcel}
-                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium"
-                >
-                  <Download className="w-5 h-5" />
-                  Exportar Excel
-                </button>
-              )}
             </div>
+          </div>
+        )}
+
+        {/* Botão Exportar - aparece quando há resultado e usuário tem permissão */}
+        {resultado && relatorio.pode_exportar && relatorio.permite_exportar && (
+          <div className="flex gap-3">
+            <button
+              onClick={handleExportarExcel}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors font-medium"
+            >
+              <Download className="w-5 h-5" />
+              Exportar Excel
+            </button>
           </div>
         )}
 
@@ -304,67 +338,34 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
         )}
 
         {resultado && (
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg overflow-hidden">
-            <div className="p-4 border-b border-slate-700/50 bg-slate-800/30 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-green-400 font-medium">Sucesso</span>
+          <div className="space-y-4 min-w-0">
+            {/* Header com informações */}
+            <div className="flex items-center gap-4 px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg min-w-0">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-green-400 font-medium">Sucesso</span>
+              </div>
+              <span className="text-slate-400 text-sm">
+                {resultado.length} linha{resultado.length !== 1 ? 's' : ''} retornada{resultado.length !== 1 ? 's' : ''}
+              </span>
+              {tempoExecucao !== null && (
+                <div className="flex items-center gap-2 text-slate-400 text-sm">
+                  <Clock className="w-4 h-4" />
+                  <span>{(tempoExecucao / 1000).toFixed(2)}s</span>
                 </div>
-                <span className="text-slate-400 text-sm">
-                  {resultado.length} linha{resultado.length !== 1 ? 's' : ''} retornada{resultado.length !== 1 ? 's' : ''}
-                </span>
-                {tempoExecucao !== null && (
-                  <div className="flex items-center gap-2 text-slate-400 text-sm">
-                    <Clock className="w-4 h-4" />
-                    <span>{(tempoExecucao / 1000).toFixed(2)}s</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
-            {/* Tabela de resultados */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-800">
-                  <tr>
-                    {resultado.length > 0 && Object.keys(resultado[0]).map((coluna) => (
-                      <th
-                        key={coluna}
-                        className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider"
-                      >
-                        {coluna}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700/50">
-                  {resultado.slice(0, 100).map((linha, idx) => (
-                    <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
-                      {Object.values(linha).map((valor: any, colIdx) => (
-                        <td key={colIdx} className="px-4 py-3 text-sm text-slate-300">
-                          {valor !== null && valor !== undefined ? String(valor) : '-'}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {resultado.length > 100 && (
-              <div className="p-4 bg-slate-800/30 text-center text-slate-400 text-sm">
-                Mostrando apenas as primeiras 100 linhas. Exporte para ver todos os dados.
-              </div>
-            )}
+            {/* Tabela com TanStack Table */}
+            <DataTable data={resultado} />
           </div>
         )}
 
-        {/* Estado inicial */}
-        {!resultado && !erro && !executando && (
+        {/* Estado inicial - só mostra se há filtros e nenhum resultado ainda */}
+        {!resultado && !erro && !executando && relatorio?.filtros && relatorio.filtros.length > 0 && (
           <div className="text-center py-12 text-slate-400">
             <Play className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">Configure os filtros e clique em "Executar Relatório"</p>
+            <p className="text-lg">Preencha os filtros e clique em "Executar Relatório"</p>
           </div>
         )}
       </div>
