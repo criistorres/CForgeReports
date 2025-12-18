@@ -9,6 +9,9 @@ import Relatorios from './pages/Relatorios';
 import RelatorioForm from './pages/RelatorioForm';
 import ExecutarRelatorio from './pages/ExecutarRelatorio';
 import Historico from './pages/Historico';
+import { ListaUsuarios } from './pages/Usuarios/ListaUsuarios';
+import { ModalCriarUsuario } from './components/usuarios/ModalCriarUsuario';
+import { DetalheUsuario } from './pages/Usuarios/DetalheUsuario';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -83,6 +86,30 @@ function App() {
           element={
             <PrivateRoute>
               <Historico />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/usuarios"
+          element={
+            <PrivateRoute>
+              <ListaUsuarios />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/usuarios/novo"
+          element={
+            <PrivateRoute>
+              <ModalCriarUsuario />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/usuarios/:id"
+          element={
+            <PrivateRoute>
+              <DetalheUsuario />
             </PrivateRoute>
           }
         />

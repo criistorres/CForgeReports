@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Play, Download, Clock, X, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Play, Download, Clock, X, Loader2, AlertCircle, CheckCircle, Star } from 'lucide-react'
 import api from '@/services/api'
 import { useToast } from '@/hooks/useToast'
 import { DataTable } from './DataTable'
@@ -40,11 +40,40 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
   const [resultado, setResultado] = useState<any[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [tempoExecucao, setTempoExecucao] = useState<number | null>(null)
+  const [isFavorito, setIsFavorito] = useState(false)
 
   // Carregar dados do relatório
   useEffect(() => {
     carregarRelatorio()
+    checkFavorito()
   }, [relatorioId])
+
+  const checkFavorito = async () => {
+    try {
+      const response = await api.get('/favoritos/')
+      const favoritos = response.data
+      setIsFavorito(favoritos.some((f: any) => f.relatorio_id === relatorioId))
+    } catch (error) {
+      console.error('Erro ao verificar favoritos:', error)
+    }
+  }
+
+  const toggleFavorito = async () => {
+    try {
+      if (isFavorito) {
+        await api.delete(`/favoritos/${relatorioId}/`)
+        setIsFavorito(false)
+        showToast('Removido dos favoritos', 'success')
+      } else {
+        await api.post('/favoritos/', { relatorio_id: relatorioId })
+        setIsFavorito(true)
+        showToast('Adicionado aos favoritos', 'success')
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar favorito:', error)
+      showToast('Erro ao atualizar favorito', 'error')
+    }
+  }
 
   // Função centralizada para executar o relatório
   const executarRelatorioInternal = async (valoresParaExecutar: Record<string, string>, relatorioAtual: Relatorio) => {
@@ -256,7 +285,21 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
       <div className="p-6 border-b border-slate-700/50 bg-slate-800/30 min-w-0">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white">{relatorio.nome}</h2>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              {relatorio.nome}
+              <button
+                onClick={toggleFavorito}
+                className="focus:outline-none transition-transform active:scale-95"
+                title={isFavorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+              >
+                <Star
+                  className={`w-6 h-6 transition-colors ${isFavorito
+                      ? 'text-yellow-400 fill-yellow-400'
+                      : 'text-slate-500 hover:text-yellow-400'
+                    }`}
+                />
+              </button>
+            </h2>
             {relatorio.descricao && (
               <p className="text-slate-400 mt-1">{relatorio.descricao}</p>
             )}

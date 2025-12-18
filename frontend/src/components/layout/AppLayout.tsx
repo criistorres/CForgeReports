@@ -68,24 +68,38 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
                   label="Dashboard"
                   isActive={isActivePath('/dashboard')}
                 />
-                <NavLink
-                  to="/conexoes"
-                  icon={<Database className="w-4 h-4" />}
-                  label="Conexões"
-                  isActive={isActivePath('/conexoes')}
-                />
-                <NavLink
-                  to="/relatorios"
-                  icon={<FileText className="w-4 h-4" />}
-                  label="Relatórios"
-                  isActive={isActivePath('/relatorios')}
-                />
-                <NavLink
-                  to="/historico"
-                  icon={<Clock className="w-4 h-4" />}
-                  label="Histórico"
-                  isActive={isActivePath('/historico')}
-                />
+
+                {['ADMIN', 'TECNICO'].includes(user.role) && (
+                  <>
+                    <NavLink
+                      to="/conexoes"
+                      icon={<Database className="w-4 h-4" />}
+                      label="Conexões"
+                      isActive={isActivePath('/conexoes')}
+                    />
+                    <NavLink
+                      to="/relatorios"
+                      icon={<FileText className="w-4 h-4" />}
+                      label="Relatórios"
+                      isActive={isActivePath('/relatorios')}
+                    />
+                    <NavLink
+                      to="/historico"
+                      icon={<Clock className="w-4 h-4" />}
+                      label="Histórico"
+                      isActive={isActivePath('/historico')}
+                    />
+                  </>
+                )}
+
+                {user.role === 'ADMIN' && (
+                  <NavLink
+                    to="/usuarios"
+                    icon={<User className="w-4 h-4" />}
+                    label="Usuários"
+                    isActive={isActivePath('/usuarios')}
+                  />
+                )}
               </nav>
             )}
           </div>

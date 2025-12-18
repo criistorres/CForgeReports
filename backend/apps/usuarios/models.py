@@ -1,17 +1,25 @@
 import uuid
+import secrets
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.utils import timezone
 
 
 class UsuarioManager(BaseUserManager):
     def create_user(self, email, empresa, password=None, **extra_fields):
         if not email:
             raise ValueError('Email é obrigatório')
-        if not empresa:
-            raise ValueError('Empresa é obrigatória')
+        
         email = self.normalize_email(email)
+        
+        # Verifica limite de usuários da empresa se empresa for fornecida
+        if empresa:
+            if empresa.usuarios.filter(ativo=True).count() >= empresa.max_usuarios:
+                raise ValueError(f'Limite de {empresa.max_usuarios} usuários atingido')
+        
         user = self.model(email=email, empresa=empresa, **extra_fields)
-        user.set_password(password)
+        if password:
+            user.set_password(password)
         user.save(using=self._db)
         return user
 
@@ -20,6 +28,7 @@ class UsuarioManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('role', 'ADMIN')
+        extra_fields.setdefault('ativo', True)
 
         if not extra_fields.get('empresa'):
             # Para superuser, permite criar sem empresa
@@ -47,12 +56,25 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         blank=True
     )
     nome = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)  # Email deve ser único no sistema
+    email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.USUARIO)
-    ativo = models.BooleanField(default=True)
+    
+    # Status e Ativação
+    ativo = models.BooleanField(default=False)
     ativado_em = models.DateTimeField(null=True, blank=True)
-    is_staff = models.BooleanField(default=False)  # Para acesso ao admin do Django
+    token_ativacao = models.CharField(max_length=100, null=True, blank=True)
+    token_expira_em = models.DateTimeField(null=True, blank=True)
+    
+    # Controle
+    is_staff = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
+    criado_por = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios_criados'
+    )
     atualizado_em = models.DateTimeField(auto_now=True)
 
     objects = UsuarioManager()
@@ -64,11 +86,45 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         db_table = 'usuarios'
         verbose_name = 'Usuário'
         verbose_name_plural = 'Usuários'
+        # Removemos unique_together de empresa+email pois email já é unique globalmente
+        # unique_together = ['empresa', 'email'] 
+        indexes = [
+            models.Index(fields=['empresa', 'ativo']),
+            models.Index(fields=['token_ativacao']),
+        ]
 
     def __str__(self):
         return f"{self.nome} ({self.email})"
 
     @property
+    def status(self):
+        """Retorna status do usuário: 'ativo', 'pendente', 'inativo'"""
+        if self.ativo:
+            return 'ativo'
+        elif self.token_ativacao and self.token_expira_em and self.token_expira_em > timezone.now():
+            return 'pendente'
+        return 'inativo'
+    
+    @property
     def is_active(self):
         """Compatibilidade com Django admin"""
         return self.ativo
+
+    def gerar_token_ativacao(self):
+        """Gera token de ativação válido por 48h"""
+        self.token_ativacao = secrets.token_urlsafe(32)
+        self.token_expira_em = timezone.now() + timezone.timedelta(hours=48)
+        self.save()
+        return self.token_ativacao
+    
+    def pode_ser_desativado(self):
+        """Verifica se o usuário pode ser desativado (RN02, RN03)"""
+        # Não pode desativar a si mesmo (verificação feita na view/permission, mas bom ter aqui)
+        # Deve existir pelo menos 1 admin ativo
+        if self.role == self.Role.ADMIN and self.empresa:
+            admins_ativos = self.empresa.usuarios.filter(
+                role=self.Role.ADMIN,
+                ativo=True
+            ).exclude(id=self.id).count()
+            return admins_ativos > 0
+        return True

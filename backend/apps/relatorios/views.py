@@ -250,11 +250,30 @@ class RelatorioViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
 class PastaViewSet(EmpresaQuerySetMixin, viewsets.ModelViewSet):
     """ViewSet para gerenciamento de pastas"""
     serializer_class = PastaSerializer
-    permission_classes = [IsAuthenticated, IsTecnicoOrAdmin]
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        """
+        Todos autenticados podem ver pastas.
+        Apenas técnicos e admins podem criar/editar/deletar.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAuthenticated(), IsTecnicoOrAdmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         """Retorna pastas da empresa do usuário"""
-        return Pasta.objects.filter(empresa_id=self.request.user.empresa_id)
+        user = self.request.user
+        qs = Pasta.objects.filter(empresa_id=user.empresa_id)
+
+        if user.role not in ['ADMIN', 'TECNICO']:
+            # Usuário comum só vê pastas que contêm relatórios que ele tem acesso
+            qs = qs.filter(
+                relatorios__permissoes__usuario=user,
+                relatorios__ativo=True
+            ).distinct()
+
+        return qs
 
     def perform_create(self, serializer):
         """Cria pasta vinculada à empresa"""

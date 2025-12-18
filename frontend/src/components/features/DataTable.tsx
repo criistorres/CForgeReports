@@ -10,23 +10,25 @@ import {
 } from '@tanstack/react-table'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 
-interface DataTableProps {
-  data: any[]
+interface DataTableProps<TData = any> {
+  data: TData[]
+  columns?: ColumnDef<TData, any>[]
   maxHeight?: string
 }
 
-export function DataTable({ data, maxHeight = '600px' }: DataTableProps) {
+export function DataTable<TData = any>({ data, columns: userColumns, maxHeight = '600px' }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 20,
   })
 
-  // Gerar colunas dinamicamente a partir dos dados
-  const columns = useMemo<ColumnDef<any>[]>(() => {
+  // Gerar colunas dinamicamente a partir dos dados ou usar as fornecidas
+  const columns = useMemo<ColumnDef<TData, any>[]>(() => {
+    if (userColumns) return userColumns
     if (!data || data.length === 0) return []
 
-    return Object.keys(data[0]).map((key) => ({
+    return Object.keys(data[0] as object).map((key) => ({
       accessorKey: key,
       header: key,
       cell: (info) => {
@@ -77,9 +79,8 @@ export function DataTable({ data, maxHeight = '600px' }: DataTableProps) {
                     >
                       {header.isPlaceholder ? null : (
                         <div
-                          className={`flex items-center gap-2 ${
-                            header.column.getCanSort() ? 'cursor-pointer select-none' : ''
-                          }`}
+                          className={`flex items-center gap-2 ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''
+                            }`}
                           onClick={header.column.getToggleSortingHandler()}
                         >
                           {flexRender(
@@ -92,8 +93,8 @@ export function DataTable({ data, maxHeight = '600px' }: DataTableProps) {
                                 asc: <ChevronUp className="w-4 h-4" />,
                                 desc: <ChevronDown className="w-4 h-4" />,
                               }[header.column.getIsSorted() as string] ?? (
-                                <ChevronsUpDown className="w-4 h-4" />
-                              )}
+                                  <ChevronsUpDown className="w-4 h-4" />
+                                )}
                             </span>
                           )}
                         </div>
