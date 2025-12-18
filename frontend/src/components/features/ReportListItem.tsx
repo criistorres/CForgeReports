@@ -1,132 +1,260 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Star, Play, FileText } from 'lucide-react'
-import api from '@/services/api'
+import { Star, Play, MoreVertical, Edit, Trash2, Copy, Clock, Calendar } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export interface Relatorio {
-  id: string
-  nome: string
-  descricao: string
-  conexao_nome?: string
-  pasta_nome?: string
-  criado_em: string
-  ultima_execucao?: string
+    id: string
+    nome: string
+    descricao?: string
+    criado_em: string
+    ultima_execucao?: string
+    pasta_id?: string
 }
 
 interface ReportListItemProps {
     relatorio: Relatorio
     isFavorito: boolean
-    onToggleFavorito: (relatorioId: string, novoEstado: boolean) => void
+    onToggleFavorito: (id: string, novoEstado: boolean) => void
+    isSelected?: boolean
+    onToggleSelect?: () => void
+    layoutType?: 'list' | 'grid'
 }
 
-export function ReportListItem({ relatorio, isFavorito, onToggleFavorito }: ReportListItemProps) {
+export function ReportListItem({
+    relatorio,
+    isFavorito,
+    onToggleFavorito,
+    isSelected,
+    onToggleSelect,
+    layoutType = 'list'
+}: ReportListItemProps) {
     const navigate = useNavigate()
-    const [isHovered, setIsHovered] = useState(false)
-    const [favoritoLoading, setFavoritoLoading] = useState(false)
+    const [showMenu, setShowMenu] = useState(false)
 
-    const handleFavoritoClick = async (e: React.MouseEvent) => {
-        e.stopPropagation()
-        if (favoritoLoading) return
-
-        setFavoritoLoading(true)
-        try {
-            if (isFavorito) {
-                await api.delete(`/favoritos/${relatorio.id}/`)
-                onToggleFavorito(relatorio.id, false)
-            } else {
-                await api.post('/favoritos/', { relatorio_id: relatorio.id })
-                onToggleFavorito(relatorio.id, true)
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar favorito:', error)
-        } finally {
-            setFavoritoLoading(false)
-        }
-    }
-
-    const handleAbrir = () => {
+    const handleExecutar = () => {
         navigate(`/relatorios/${relatorio.id}/executar`)
     }
 
-    const formatarData = (dataString?: string) => {
-        if (!dataString) return 'Nunca executado'
-        const data = new Date(dataString)
-        const agora = new Date()
-        const diff = agora.getTime() - data.getTime()
-
-        const minutos = Math.floor(diff / 60000)
-        const horas = Math.floor(diff / 3600000)
-        const dias = Math.floor(diff / 86400000)
-
-        if (minutos < 60) return `${minutos}min atrás`
-        if (horas < 24) return `${horas}h atrás`
-        if (dias < 7) return `${dias}d atrás`
-        return data.toLocaleDateString('pt-BR')
+    const handleEditar = () => {
+        navigate(`/relatorios/${relatorio.id}/editar`)
     }
 
-    return (
-        <div
-            className={`
-        group flex items-center gap-4 px-4 py-3 rounded-lg transition-all cursor-pointer
-        ${isHovered ? 'bg-slate-700/60' : 'bg-slate-800/40 hover:bg-slate-700/40'}
-      `}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onClick={handleAbrir}
-        >
-            {/* Ícone do relatório */}
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-5 h-5 text-white" />
-            </div>
+    const handleDuplicar = () => {
+        // TODO: Implementar duplicação
+        console.log('Duplicar relatório:', relatorio.id)
+    }
 
-            {/* Info do relatório */}
-            <div className="flex-1 min-w-0">
-                <h4 className="text-white font-medium truncate">{relatorio.nome}</h4>
-                {relatorio.descricao && (
-                    <p className="text-sm text-slate-400 truncate">{relatorio.descricao}</p>
+    const handleExcluir = () => {
+        if (confirm(`Tem certeza que deseja excluir "${relatorio.nome}"?`)) {
+            // TODO: Implementar exclusão
+            console.log('Excluir relatório:', relatorio.id)
+        }
+    }
+
+    const formatarDataRelativa = (data: string) => {
+        try {
+            return formatDistanceToNow(new Date(data), {
+                addSuffix: true,
+                locale: ptBR
+            })
+        } catch {
+            return 'Data inválida'
+        }
+    }
+
+    if (layoutType === 'grid') {
+        return (
+            <div
+                className={`
+          group relative bg-slate-800/50 border rounded-lg p-4 hover:border-primary-500/50 transition-all
+          ${isSelected ? 'border-primary-500 bg-primary-500/10' : 'border-slate-700'}
+        `}
+            >
+                {/* Checkbox de seleção */}
+                {onToggleSelect && (
+                    <div className="absolute top-3 left-3 z-10">
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={onToggleSelect}
+                            className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
                 )}
-            </div>
 
-            {/* Data última execução */}
-            <div className="text-sm text-slate-500 hidden md:block">
-                {formatarData(relatorio.ultima_execucao)}
-            </div>
-
-            {/* Ações (aparecem no hover) */}
-            <div className={`flex items-center gap-2 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                {/* Botão Favorito */}
-                <button
-                    onClick={handleFavoritoClick}
-                    disabled={favoritoLoading}
-                    className={`
-            p-2 rounded-lg transition-all
-            ${isFavorito
-                            ? 'text-yellow-400 hover:bg-yellow-500/20'
-                            : 'text-slate-400 hover:text-yellow-400 hover:bg-slate-600/50'
-                        }
-          `}
-                    title={isFavorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                >
-                    <Star className={`w-4 h-4 ${isFavorito ? 'fill-current' : ''}`} />
-                </button>
-
-                {/* Botão Abrir */}
+                {/* Favorito */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation()
-                        handleAbrir()
+                        onToggleFavorito(relatorio.id, !isFavorito)
                     }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="absolute top-3 right-3 z-10 p-1 hover:scale-110 transition-transform"
                 >
-                    <Play className="w-4 h-4" />
-                    Abrir
+                    <Star
+                        className={`w-5 h-5 ${isFavorito ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'
+                            }`}
+                    />
                 </button>
+
+                <div className="mt-8 mb-4">
+                    <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">
+                        {relatorio.nome}
+                    </h3>
+                    {relatorio.descricao && (
+                        <p className="text-sm text-slate-400 line-clamp-2">{relatorio.descricao}</p>
+                    )}
+                </div>
+
+                {/* Informações */}
+                <div className="space-y-2 mb-4">
+                    {relatorio.criado_em && (
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <Calendar className="w-3 h-3" />
+                            <span>Criado {formatarDataRelativa(relatorio.criado_em)}</span>
+                        </div>
+                    )}
+                    {relatorio.ultima_execucao && (
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <Clock className="w-3 h-3" />
+                            <span>Executado {formatarDataRelativa(relatorio.ultima_execucao)}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Ações */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleExecutar}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors text-sm"
+                    >
+                        <Play className="w-4 h-4" />
+                        Executar
+                    </button>
+                    <button
+                        onClick={handleEditar}
+                        className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
+                    >
+                        <Edit className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    // Layout de lista
+    return (
+        <div
+            className={`
+        group flex items-center gap-4 bg-slate-800/50 border rounded-lg p-4 hover:border-primary-500/50 transition-all
+        ${isSelected ? 'border-primary-500 bg-primary-500/10' : 'border-slate-700'}
+      `}
+        >
+            {/* Checkbox de seleção */}
+            {onToggleSelect && (
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={onToggleSelect}
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
+                    onClick={(e) => e.stopPropagation()}
+                />
+            )}
+
+            {/* Favorito */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleFavorito(relatorio.id, !isFavorito)
+                }}
+                className="p-1 hover:scale-110 transition-transform"
+            >
+                <Star
+                    className={`w-5 h-5 ${isFavorito ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'
+                        }`}
+                />
+            </button>
+
+            {/* Informações */}
+            <div className="flex-1 min-w-0">
+                <h3 className="text-white font-medium truncate">{relatorio.nome}</h3>
+                {relatorio.descricao && (
+                    <p className="text-sm text-slate-400 truncate">{relatorio.descricao}</p>
+                )}
+                <div className="flex items-center gap-4 mt-1">
+                    {relatorio.criado_em && (
+                        <span className="text-xs text-slate-500">
+                            Criado {formatarDataRelativa(relatorio.criado_em)}
+                        </span>
+                    )}
+                    {relatorio.ultima_execucao && (
+                        <span className="text-xs text-slate-500">
+                            Executado {formatarDataRelativa(relatorio.ultima_execucao)}
+                        </span>
+                    )}
+                </div>
             </div>
 
-            {/* Favorito visível quando não hover (se for favorito) */}
-            {!isHovered && isFavorito && (
-                <Star className="w-4 h-4 text-yellow-400 fill-current flex-shrink-0" />
-            )}
+            {/* Ações */}
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleExecutar}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                >
+                    <Play className="w-4 h-4" />
+                    Executar
+                </button>
+
+                <button
+                    onClick={handleEditar}
+                    className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                >
+                    <Edit className="w-4 h-4" />
+                </button>
+
+                {/* Menu de mais opções */}
+                <div className="relative">
+                    <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="p-2 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                    >
+                        <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {showMenu && (
+                        <>
+                            <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setShowMenu(false)}
+                            />
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-20 py-1">
+                                <button
+                                    onClick={() => {
+                                        handleDuplicar()
+                                        setShowMenu(false)
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-700 text-slate-300 transition-colors text-left"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                    Duplicar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        handleExcluir()
+                                        setShowMenu(false)
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 hover:bg-slate-700 text-red-400 transition-colors text-left"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Excluir
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }

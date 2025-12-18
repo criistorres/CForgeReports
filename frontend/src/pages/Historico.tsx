@@ -1,152 +1,218 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { ForgeCard } from '@/components/forge';
-import api from '@/services/api';
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { Clock, Play, Check, X, Filter, Calendar, User, FileText, Timer } from 'lucide-react'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { useToast } from '@/hooks/useToast'
+import api from '@/services/api'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 interface Execucao {
-  id: string;
-  relatorio_id: string;
-  relatorio_nome: string;
-  usuario_nome: string;
-  usuario_email: string;
-  iniciado_em: string;
-  finalizado_em: string;
-  tempo_execucao_ms: number;
-  sucesso: boolean;
-  erro: string | null;
-  qtd_linhas: number;
-  exportou: boolean;
-  filtros_usados: Record<string, any>;
+  id: string
+  relatorio_id: string
+  relatorio_nome: string
+  usuario_nome: string
+  usuario_email: string
+  iniciado_em: string
+  finalizado_em: string
+  tempo_execucao_ms: number
+  sucesso: boolean
+  erro: string | null
+  qtd_linhas: number
+  exportou: boolean
+  filtros_usados: Record<string, any>
 }
 
 export default function Historico() {
-  const [execucoes, setExecucoes] = useState<Execucao[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [execucoes, setExecucoes] = useState<Execucao[]>([])
+  const [loading, setLoading] = useState(true)
   const [filtros, setFiltros] = useState({
     sucesso: '',
     relatorio_id: ''
-  });
+  })
+  const { showToast } = useToast()
 
   useEffect(() => {
-    carregarHistorico();
-  }, [filtros]);
+    carregarHistorico()
+  }, [filtros])
 
   async function carregarHistorico() {
-    setLoading(true);
+    setLoading(true)
     try {
-      const params = new URLSearchParams();
-      if (filtros.sucesso) params.append('sucesso', filtros.sucesso);
-      if (filtros.relatorio_id) params.append('relatorio_id', filtros.relatorio_id);
+      const params = new URLSearchParams()
+      if (filtros.sucesso) params.append('sucesso', filtros.sucesso)
+      if (filtros.relatorio_id) params.append('relatorio_id', filtros.relatorio_id)
 
-      const response = await api.get(`/historico/?${params.toString()}`);
-      setExecucoes(response.data);
+      const response = await api.get(`/historico/?${params.toString()}`)
+      setExecucoes(response.data)
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
+      showToast('Erro ao carregar histórico', 'error')
+      console.error('Erro ao carregar histórico:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
+  }
+
+  function formatarDataRelativa(data: string) {
+    try {
+      return formatDistanceToNow(new Date(data), {
+        addSuffix: true,
+        locale: ptBR
+      })
+    } catch {
+      return 'Data inválida'
+    }
+  }
+
+  function formatarTempo(ms: number | null) {
+    if (!ms) return '-'
+    if (ms < 1000) return `${ms}ms`
+    return `${(ms / 1000).toFixed(2)}s`
+  }
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-slate-400">Carregando histórico...</p>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    )
   }
 
   return (
     <AppLayout>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold gradient-text">Histórico de Execuções</h1>
-        <p className="text-slate-400 mt-2">
-          Visualize o histórico completo de execuções de relatórios
-        </p>
-      </div>
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Clock className="w-6 h-6 text-primary-400" />
+            Histórico de Execuções
+          </h1>
+          <p className="text-slate-400 mt-1">
+            Visualize todas as execuções de relatórios
+          </p>
+        </div>
 
-      {/* Filtros */}
-      <ForgeCard className="mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Filtros</h2>
-        <div className="flex gap-4 flex-wrap">
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Status</label>
-            <select
-              value={filtros.sucesso}
-              onChange={(e) => setFiltros({ ...filtros, sucesso: e.target.value })}
-              className="bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
-            >
-              <option value="">Todos</option>
-              <option value="true">Sucesso</option>
-              <option value="false">Erro</option>
-            </select>
+        {/* Filtros */}
+        <div className="bg-slate-800/50 border border-slate-700/50 p-5 rounded-xl mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="w-4 h-4 text-primary-400" />
+            <h2 className="text-sm font-semibold text-white">Filtros</h2>
+          </div>
+          <div className="flex gap-4">
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">Status</label>
+              <select
+                value={filtros.sucesso}
+                onChange={(e) => setFiltros({ ...filtros, sucesso: e.target.value })}
+                className="bg-slate-800/50 text-white px-4 py-2.5 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors min-w-[150px]"
+              >
+                <option value="">Todos</option>
+                <option value="true">✓ Sucesso</option>
+                <option value="false">✗ Erro</option>
+              </select>
+            </div>
           </div>
         </div>
-      </ForgeCard>
 
-      {/* Tabela de Execuções */}
-      <ForgeCard>
-        {loading ? (
-          <div className="text-center text-slate-400 py-8">Carregando...</div>
-        ) : execucoes.length === 0 ? (
-          <div className="text-center text-slate-400 py-8">
-            Nenhuma execução encontrada
+        {/* Lista de Execuções */}
+        {execucoes.length === 0 ? (
+          <div className="bg-slate-800/50 border border-slate-700/50 p-12 rounded-xl text-center">
+            <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-400 text-lg">Nenhuma execução encontrada</p>
+            <p className="text-slate-500 mt-1">Execute um relatório para ver o histórico aqui</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left p-4 text-slate-300 font-medium">Data/Hora</th>
-                  <th className="text-left p-4 text-slate-300 font-medium">Relatório</th>
-                  <th className="text-left p-4 text-slate-300 font-medium">Usuário</th>
-                  <th className="text-left p-4 text-slate-300 font-medium">Status</th>
-                  <th className="text-left p-4 text-slate-300 font-medium">Tempo</th>
-                  <th className="text-left p-4 text-slate-300 font-medium">Linhas</th>
-                  <th className="text-left p-4 text-slate-300 font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {execucoes.map((exec) => (
-                  <tr key={exec.id} className="border-b border-slate-700 hover:bg-slate-700/30">
-                    <td className="p-4 text-white">
-                      {new Date(exec.iniciado_em).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
-                    <td className="p-4 text-white">{exec.relatorio_nome}</td>
-                    <td className="p-4 text-slate-300">
-                      <div className="text-sm">{exec.usuario_nome}</div>
-                      <div className="text-xs text-slate-500">{exec.usuario_email}</div>
-                    </td>
-                    <td className="p-4">
-                      {exec.sucesso ? (
-                        <span className="text-green-400 flex items-center gap-1">
-                          ✓ Sucesso
-                        </span>
-                      ) : (
-                        <span className="text-red-400 flex items-center gap-1" title={exec.erro || ''}>
-                          ✗ Erro
-                        </span>
+          <div className="space-y-3">
+            {execucoes.map((exec) => (
+              <div
+                key={exec.id}
+                className="bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 p-5 rounded-xl transition-all"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Ícone de status */}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${exec.sucesso
+                        ? 'bg-green-500/20'
+                        : 'bg-red-500/20'
+                      }`}>
+                      {exec.sucesso
+                        ? <Check className="w-5 h-5 text-green-400" />
+                        : <X className="w-5 h-5 text-red-400" />
+                      }
+                    </div>
+
+                    {/* Info principal */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="text-white font-semibold">{exec.relatorio_nome}</h3>
+                        {exec.sucesso ? (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                            Sucesso
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
+                            Erro
+                          </span>
+                        )}
+                        {exec.exportou && (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            📥 Exportado
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Erro */}
+                      {exec.erro && (
+                        <p className="text-red-400 text-sm mb-2 bg-red-500/10 px-3 py-2 rounded-lg">
+                          {exec.erro}
+                        </p>
                       )}
-                    </td>
-                    <td className="p-4 text-slate-300">
-                      {exec.tempo_execucao_ms ? `${(exec.tempo_execucao_ms / 1000).toFixed(2)}s` : '-'}
-                    </td>
-                    <td className="p-4 text-slate-300">
-                      {exec.qtd_linhas?.toLocaleString('pt-BR') || '-'}
-                    </td>
-                    <td className="p-4">
-                      <Link
-                        to={`/relatorios/${exec.relatorio_id}/executar`}
-                        className="text-purple-400 hover:text-purple-300 text-sm"
-                      >
-                        Re-executar →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+                      {/* Metadata */}
+                      <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {formatarDataRelativa(exec.iniciado_em)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5" />
+                          {exec.usuario_nome}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Timer className="w-3.5 h-3.5" />
+                          {formatarTempo(exec.tempo_execucao_ms)}
+                        </span>
+                        {exec.qtd_linhas > 0 && (
+                          <span className="flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5" />
+                            {exec.qtd_linhas.toLocaleString('pt-BR')} linhas
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ação */}
+                  <Link
+                    to={`/relatorios/${exec.relatorio_id}/executar`}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors text-sm ml-4"
+                  >
+                    <Play className="w-4 h-4" />
+                    Re-executar
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </ForgeCard>
+      </div>
     </AppLayout>
-  );
+  )
 }

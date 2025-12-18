@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { ToastProvider } from './hooks/useToast';
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
 import Dashboard from './pages/Dashboard';
@@ -25,67 +26,69 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route
-        path="/dashboard"
-        element={
-          <PrivateRoute>
-            <Dashboard />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/conexoes"
-        element={
-          <PrivateRoute>
-            <Conexoes />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/relatorios"
-        element={
-          <PrivateRoute>
-            <Relatorios />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/relatorios/novo"
-        element={
-          <PrivateRoute>
-            <RelatorioForm />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/relatorios/:id/editar"
-        element={
-          <PrivateRoute>
-            <RelatorioForm />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/relatorios/:id/executar"
-        element={
-          <PrivateRoute>
-            <ExecutarRelatorio />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/historico"
-        element={
-          <PrivateRoute>
-            <Historico />
-          </PrivateRoute>
-        }
-      />
-      <Route path="/" element={<Navigate to="/dashboard" />} />
-    </Routes>
+    <ToastProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/cadastro" element={<Cadastro />} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/conexoes"
+          element={
+            <PrivateRoute>
+              <Conexoes />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/relatorios"
+          element={
+            <PrivateRoute>
+              <Relatorios />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/relatorios/novo"
+          element={
+            <PrivateRoute>
+              <RelatorioForm />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/relatorios/:id/editar"
+          element={
+            <PrivateRoute>
+              <RelatorioForm />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/relatorios/:id/executar"
+          element={
+            <PrivateRoute>
+              <ExecutarRelatorio />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/historico"
+          element={
+            <PrivateRoute>
+              <Historico />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </ToastProvider>
   );
 }
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
+import { Plus, Database, Server, Play, Edit, Trash2, Check, X, AlertCircle, Save } from 'lucide-react'
 import api from '@/services/api'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { ForgeCard, ForgeButton, ForgeInput, ForgeLabel, ForgeBadge, ForgeSelect } from '@/components/forge'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { useToast } from '@/hooks/useToast'
 
 interface Conexao {
   id: string
@@ -31,7 +31,6 @@ interface ConexaoFormData {
 export default function Conexoes() {
   const [conexoes, setConexoes] = useState<Conexao[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<ConexaoFormData>({
@@ -45,6 +44,7 @@ export default function Conexoes() {
   })
   const [testando, setTestando] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const { showToast } = useToast()
 
   useEffect(() => {
     fetchConexoes()
@@ -53,11 +53,10 @@ export default function Conexoes() {
   async function fetchConexoes() {
     try {
       setLoading(true)
-      setError(null)
       const response = await api.get('/conexoes/')
       setConexoes(response.data)
     } catch (err) {
-      setError('Erro ao carregar conexões')
+      showToast('Erro ao carregar conexões', 'error')
       console.error(err)
     } finally {
       setLoading(false)
@@ -68,14 +67,14 @@ export default function Conexoes() {
     try {
       const response = await api.post(`/conexoes/${id}/testar-existente/`)
       if (response.data.sucesso) {
-        alert(`✓ ${response.data.mensagem}`)
+        showToast(response.data.mensagem, 'success')
       } else {
-        alert(`✗ ${response.data.mensagem}`)
+        showToast(response.data.mensagem, 'error')
       }
       fetchConexoes()
     } catch (err: any) {
       const mensagem = err.response?.data?.mensagem || 'Erro ao testar conexão'
-      alert(`✗ ${mensagem}`)
+      showToast(mensagem, 'error')
     }
   }
 
@@ -86,32 +85,12 @@ export default function Conexoes() {
 
     try {
       await api.delete(`/conexoes/${id}/`)
-      alert('Conexão deletada com sucesso')
+      showToast('Conexão deletada com sucesso', 'success')
       fetchConexoes()
     } catch (err) {
-      alert('Erro ao deletar conexão')
+      showToast('Erro ao deletar conexão', 'error')
       console.error(err)
     }
-  }
-
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="loading-bar w-32"></div>
-        </div>
-      </AppLayout>
-    )
-  }
-
-  if (error) {
-    return (
-      <AppLayout>
-        <div className="notification error p-4 rounded-lg">
-          <p className="text-error">{error}</p>
-        </div>
-      </AppLayout>
-    )
   }
 
   function handleNovaConexao() {
@@ -136,7 +115,7 @@ export default function Conexoes() {
       porta: conexao.porta,
       database: conexao.database,
       usuario: conexao.usuario,
-      senha: '' // Senha não é retornada pela API
+      senha: ''
     })
     setEditingId(conexao.id)
     setShowForm(true)
@@ -156,13 +135,13 @@ export default function Conexoes() {
     try {
       const response = await api.post('/conexoes/testar/', formData)
       if (response.data.sucesso) {
-        alert(`✓ ${response.data.mensagem}`)
+        showToast(response.data.mensagem, 'success')
       } else {
-        alert(`✗ ${response.data.mensagem}`)
+        showToast(response.data.mensagem, 'error')
       }
     } catch (err: any) {
       const mensagem = err.response?.data?.mensagem || 'Erro ao testar conexão'
-      alert(`✗ ${mensagem}`)
+      showToast(mensagem, 'error')
     } finally {
       setTestando(false)
     }
@@ -175,231 +154,317 @@ export default function Conexoes() {
     try {
       if (editingId) {
         await api.put(`/conexoes/${editingId}/`, formData)
-        alert('Conexão atualizada com sucesso!')
+        showToast('Conexão atualizada com sucesso!', 'success')
       } else {
         await api.post('/conexoes/', formData)
-        alert('Conexão criada com sucesso!')
+        showToast('Conexão criada com sucesso!', 'success')
       }
       setShowForm(false)
       fetchConexoes()
     } catch (err: any) {
       const mensagem = err.response?.data?.detail || 'Erro ao salvar conexão'
-      alert(`Erro: ${mensagem}`)
+      showToast(mensagem, 'error')
     } finally {
       setSalvando(false)
     }
   }
 
+  function getTipoBadge(tipo: string) {
+    const badges: { [key: string]: { color: string; icon: string } } = {
+      'POSTGRESQL': { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: '🐘' },
+      'SQLSERVER': { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '🔷' },
+      'MYSQL': { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: '🐬' }
+    }
+    return badges[tipo] || { color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', icon: '💾' }
+  }
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-slate-400">Carregando conexões...</p>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
   return (
     <AppLayout>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold gradient-text">Conexões de Banco</h1>
-        <ForgeButton onClick={handleNovaConexao} glow>
-          + Nova Conexão
-        </ForgeButton>
-      </div>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Database className="w-6 h-6 text-primary-400" />
+              Conexões de Banco
+            </h1>
+            <p className="text-slate-400 mt-1">Gerencie suas conexões de banco de dados</p>
+          </div>
+          <button
+            onClick={handleNovaConexao}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nova Conexão
+          </button>
+        </div>
 
-      {showForm && (
-        <ForgeCard
-          title={editingId ? 'Editar Conexão' : 'Nova Conexão'}
-          className="mb-6"
-        >
-          <form onSubmit={handleSalvar} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <ForgeLabel htmlFor="nome">Nome *</ForgeLabel>
-                <ForgeInput
-                  id="nome"
-                  type="text"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  required
-                />
+        {/* Formulário */}
+        {showForm && (
+          <div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-xl mb-6">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Server className="w-5 h-5 text-primary-400" />
+              {editingId ? 'Editar Conexão' : 'Nova Conexão'}
+            </h2>
+
+            <form onSubmit={handleSalvar} className="space-y-5">
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Nome da Conexão *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    placeholder="Ex: Produção, Desenvolvimento..."
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Tipo de Banco *
+                  </label>
+                  <select
+                    value={formData.tipo}
+                    onChange={(e) => handleTipoChange(e.target.value)}
+                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    required
+                  >
+                    <option value="POSTGRESQL">🐘 PostgreSQL</option>
+                    <option value="SQLSERVER">🔷 SQL Server</option>
+                    <option value="MYSQL">🐬 MySQL</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <ForgeLabel htmlFor="tipo">Tipo *</ForgeLabel>
-                <ForgeSelect
-                  id="tipo"
-                  value={formData.tipo}
-                  onChange={(e) => handleTipoChange(e.target.value)}
-                  required
+
+              <div className="grid grid-cols-4 gap-5">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Host *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.host}
+                    onChange={(e) => setFormData({ ...formData, host: e.target.value })}
+                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    placeholder="localhost ou IP do servidor"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Porta *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.porta}
+                    onChange={(e) => setFormData({ ...formData, porta: parseInt(e.target.value) })}
+                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Database *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.database}
+                    onChange={(e) => setFormData({ ...formData, database: e.target.value })}
+                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    placeholder="Nome do banco"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Usuário *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.usuario}
+                    onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
+                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    placeholder="Usuário do banco"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Senha {editingId && <span className="text-slate-500">(deixe em branco para manter)</span>}
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.senha}
+                    onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    placeholder="••••••••"
+                    required={!editingId}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleTestarFormulario}
+                  disabled={testando}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50"
                 >
-                  <option value="POSTGRESQL">PostgreSQL</option>
-                  <option value="SQLSERVER">SQL Server</option>
-                  <option value="MYSQL">MySQL</option>
-                </ForgeSelect>
+                  <Play className="w-4 h-4" />
+                  {testando ? 'Testando...' : 'Testar Conexão'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvando}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium"
+                >
+                  <Save className="w-4 h-4" />
+                  {salvando ? 'Salvando...' : 'Salvar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
               </div>
-            </div>
+            </form>
+          </div>
+        )}
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-2">
-                <ForgeLabel htmlFor="host">Host *</ForgeLabel>
-                <ForgeInput
-                  id="host"
-                  type="text"
-                  value={formData.host}
-                  onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <ForgeLabel htmlFor="porta">Porta *</ForgeLabel>
-                <ForgeInput
-                  id="porta"
-                  type="number"
-                  value={formData.porta}
-                  onChange={(e) => setFormData({ ...formData, porta: parseInt(e.target.value) })}
-                  required
-                />
-              </div>
-            </div>
+        {/* Lista de Conexões */}
+        {conexoes.length === 0 ? (
+          <div className="bg-slate-800/50 border border-slate-700/50 p-12 rounded-xl text-center">
+            <Database className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-400 mb-2 text-lg">Nenhuma conexão cadastrada</p>
+            <p className="text-slate-500 mb-4">Adicione sua primeira conexão de banco de dados</p>
+            <button
+              onClick={handleNovaConexao}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Nova Conexão
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {conexoes.map((conexao) => {
+              const badge = getTipoBadge(conexao.tipo)
+              return (
+                <div
+                  key={conexao.id}
+                  className="bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 p-5 rounded-xl flex justify-between items-center transition-all"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Ícone de status */}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${conexao.ultimo_teste_ok === true
+                        ? 'bg-green-500/20'
+                        : conexao.ultimo_teste_ok === false
+                          ? 'bg-red-500/20'
+                          : 'bg-slate-700/50'
+                      }`}>
+                      {conexao.ultimo_teste_ok === true && <Check className="w-5 h-5 text-green-400" />}
+                      {conexao.ultimo_teste_ok === false && <X className="w-5 h-5 text-red-400" />}
+                      {conexao.ultimo_teste_ok === null && <AlertCircle className="w-5 h-5 text-slate-400" />}
+                    </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <ForgeLabel htmlFor="database">Database *</ForgeLabel>
-                <ForgeInput
-                  id="database"
-                  type="text"
-                  value={formData.database}
-                  onChange={(e) => setFormData({ ...formData, database: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <ForgeLabel htmlFor="usuario">Usuário *</ForgeLabel>
-                <ForgeInput
-                  id="usuario"
-                  type="text"
-                  value={formData.usuario}
-                  onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <ForgeLabel htmlFor="senha">
-                Senha {editingId ? '(deixe em branco para manter a atual)' : '*'}
-              </ForgeLabel>
-              <ForgeInput
-                id="senha"
-                type="password"
-                value={formData.senha}
-                onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                required={!editingId}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <ForgeButton
-                type="button"
-                onClick={handleTestarFormulario}
-                disabled={testando}
-                variant="outline"
-              >
-                {testando ? 'Testando...' : 'Testar Conexão'}
-              </ForgeButton>
-              <ForgeButton
-                type="submit"
-                disabled={salvando}
-                glow
-              >
-                {salvando ? 'Salvando...' : 'Salvar'}
-              </ForgeButton>
-              <ForgeButton
-                type="button"
-                onClick={() => setShowForm(false)}
-                variant="ghost"
-              >
-                Cancelar
-              </ForgeButton>
-            </div>
-          </form>
-        </ForgeCard>
-      )}
-
-      {conexoes.length === 0 ? (
-        <ForgeCard className="text-center">
-          <p className="text-slate-400 text-lg mb-4">Nenhuma conexão cadastrada</p>
-          <p className="text-slate-500">Clique em "Nova Conexão" para adicionar sua primeira conexão de banco de dados</p>
-        </ForgeCard>
-      ) : (
-        <div className="table-container">
-          <Table>
-            <TableHeader>
-              <TableRow className="table-header">
-                <TableHead>Nome</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Host</TableHead>
-                <TableHead>Database</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {conexoes.map((conexao) => (
-                <TableRow key={conexao.id} className="table-row">
-                  <TableCell className="font-medium text-white">{conexao.nome}</TableCell>
-                  <TableCell>
-                    <ForgeBadge variant="inactive">
-                      {conexao.tipo}
-                    </ForgeBadge>
-                  </TableCell>
-                  <TableCell className="text-slate-300">
-                    {conexao.host}:{conexao.porta}
-                  </TableCell>
-                  <TableCell className="text-slate-300">{conexao.database}</TableCell>
-                  <TableCell>
-                    {conexao.ultimo_teste_ok === true && (
-                      <div className="flex items-center gap-2">
-                        <span className="status-dot active"></span>
-                        <span className="text-success">OK</span>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-white font-semibold text-lg">{conexao.nome}</h3>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${badge.color}`}>
+                          {badge.icon} {conexao.tipo}
+                        </span>
                       </div>
+                      <div className="flex gap-4 mt-1.5 text-sm text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Server className="w-3 h-3" />
+                          {conexao.host}:{conexao.porta}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Database className="w-3 h-3" />
+                          {conexao.database}
+                        </span>
+                        <span>
+                          👤 {conexao.usuario}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status badge */}
+                  <div className="mx-4">
+                    {conexao.ultimo_teste_ok === true && (
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                        ✓ Conectado
+                      </span>
                     )}
                     {conexao.ultimo_teste_ok === false && (
-                      <div className="flex items-center gap-2">
-                        <span className="status-dot inactive"></span>
-                        <span className="text-error">Erro</span>
-                      </div>
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
+                        ✗ Erro
+                      </span>
                     )}
                     {conexao.ultimo_teste_ok === null && (
-                      <div className="flex items-center gap-2">
-                        <span className="status-dot inactive"></span>
-                        <span className="text-slate-500">Não testado</span>
-                      </div>
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-500/20 text-slate-400 border border-slate-500/30">
+                        Não testado
+                      </span>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => testarConexao(conexao.id)}
-                        className="text-primary-400 hover:text-primary-300 transition"
-                        title="Testar conexão"
-                      >
-                        Testar
-                      </button>
-                      <button
-                        onClick={() => handleEditarConexao(conexao)}
-                        className="text-accent-500 hover:text-accent-400 transition"
-                        title="Editar conexão"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => deletarConexao(conexao.id, conexao.nome)}
-                        className="text-error hover:text-red-300 transition"
-                        title="Deletar conexão"
-                      >
-                        Deletar
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => testarConexao(conexao.id)}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm"
+                      title="Testar conexão"
+                    >
+                      <Play className="w-4 h-4" />
+                      Testar
+                    </button>
+                    <button
+                      onClick={() => handleEditarConexao(conexao)}
+                      className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+                      title="Editar conexão"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => deletarConexao(conexao.id, conexao.nome)}
+                      className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg transition-colors text-sm"
+                      title="Deletar conexão"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </AppLayout>
   )
 }

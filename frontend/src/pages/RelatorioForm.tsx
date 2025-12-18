@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import api from '../services/api'
-import FiltroForm from '../components/features/FiltroForm'
-import PermissoesForm from '../components/forge/PermissoesForm'
-import type { Filtro } from '../components/features/FiltroForm'
+import { useNavigate, useParams, Link } from 'react-router-dom'
+import { ChevronRight, Save, ArrowLeft, Play, FileText, Filter, Shield } from 'lucide-react'
+import api from '@/services/api'
+import { AppLayout } from '@/components/layout/AppLayout'
+import FiltroForm from '@/components/features/FiltroForm'
+import PermissoesForm from '@/components/forge/PermissoesForm'
+import type { Filtro } from '@/components/features/FiltroForm'
 import type { PastaNode } from '@/components/features/FolderTree'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/hooks/useToast'
 
 interface Conexao {
   id: string
@@ -26,14 +29,15 @@ export default function RelatorioForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const isEditing = !!id
   const isAdmin = user?.role === 'ADMIN'
 
   const [conexoes, setConexoes] = useState<Conexao[]>([])
   const [pastas, setPastas] = useState<PastaNode[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingData, setLoadingData] = useState(true)
   const [testando, setTestando] = useState(false)
-  const [error, setError] = useState('')
   const [resultadoTeste, setResultadoTeste] = useState<any>(null)
   const [filtros, setFiltros] = useState<Filtro[]>([])
   const [salvandoFiltros, setSalvandoFiltros] = useState(false)
@@ -50,28 +54,39 @@ export default function RelatorioForm() {
   })
 
   useEffect(() => {
-    loadConexoes()
-    loadPastas()
-    if (isEditing) {
-      loadRelatorio()
-    }
+    loadData()
   }, [id])
 
-  async function loadConexoes() {
+  async function loadData() {
+    setLoadingData(true)
     try {
-      const response = await api.get('/conexoes/')
-      setConexoes(response.data)
-    } catch (err) {
-      setError('Erro ao carregar conexões')
-    }
-  }
+      const [conexoesRes, pastasRes] = await Promise.all([
+        api.get('/conexoes/'),
+        api.get('/pastas/')
+      ])
+      setConexoes(conexoesRes.data)
+      setPastas(pastasRes.data)
 
-  async function loadPastas() {
-    try {
-      const response = await api.get('/pastas/')
-      setPastas(response.data)
+      if (isEditing) {
+        const relatorioRes = await api.get(`/relatorios/${id}/`)
+        setFormData({
+          nome: relatorioRes.data.nome,
+          descricao: relatorioRes.data.descricao || '',
+          pasta: relatorioRes.data.pasta || '',
+          conexao: relatorioRes.data.conexao,
+          query_sql: relatorioRes.data.query_sql,
+          limite_linhas_tela: relatorioRes.data.limite_linhas_tela,
+          permite_exportar: relatorioRes.data.permite_exportar
+        })
+
+        // Carregar filtros
+        const filtrosRes = await api.get(`/relatorios/${id}/filtros/`)
+        setFiltros(filtrosRes.data)
+      }
     } catch (err) {
-      console.error('Erro ao carregar pastas:', err)
+      showToast('Erro ao carregar dados', 'error')
+    } finally {
+      setLoadingData(false)
     }
   }
 
@@ -105,46 +120,17 @@ export default function RelatorioForm() {
       .sort((a, b) => a.caminho.localeCompare(b.caminho))
   }
 
-  async function loadRelatorio() {
-    try {
-      const response = await api.get(`/relatorios/${id}/`)
-      setFormData({
-        nome: response.data.nome,
-        descricao: response.data.descricao || '',
-        pasta: response.data.pasta || '',
-        conexao: response.data.conexao,
-        query_sql: response.data.query_sql,
-        limite_linhas_tela: response.data.limite_linhas_tela,
-        permite_exportar: response.data.permite_exportar
-      })
-      // Carregar filtros
-      loadFiltros()
-    } catch (err) {
-      setError('Erro ao carregar relatório')
-    }
-  }
-
-  async function loadFiltros() {
-    try {
-      const response = await api.get(`/relatorios/${id}/filtros/`)
-      setFiltros(response.data)
-    } catch (err) {
-      console.error('Erro ao carregar filtros:', err)
-    }
-  }
-
   async function salvarFiltros() {
     if (!id) return
 
     setSalvandoFiltros(true)
-    setError('')
 
     try {
       await api.put(`/relatorios/${id}/filtros/`, { filtros })
-      alert('Filtros salvos com sucesso!')
+      showToast('Filtros salvos com sucesso!', 'success')
     } catch (err: any) {
       const errorMsg = err.response?.data?.erro || 'Erro ao salvar filtros'
-      setError(errorMsg)
+      showToast(errorMsg, 'error')
     } finally {
       setSalvandoFiltros(false)
     }
@@ -152,20 +138,24 @@ export default function RelatorioForm() {
 
   async function handleTestar() {
     if (!formData.query_sql.trim()) {
-      setError('Digite uma query SQL para testar')
+      showToast('Digite uma query SQL para testar', 'warning')
       return
     }
 
     setTestando(true)
-    setError('')
     setResultadoTeste(null)
 
     try {
       const response = await api.post(`/relatorios/${id}/testar/`)
       setResultadoTeste(response.data)
+      if (response.data.sucesso) {
+        showToast(`Query válida! ${response.data.total_linhas} linhas encontradas`, 'success')
+      } else {
+        showToast('Erro na query', 'error')
+      }
     } catch (err: any) {
       const errorMsg = err.response?.data?.erro || 'Erro ao testar query'
-      setError(errorMsg)
+      showToast(errorMsg, 'error')
     } finally {
       setTestando(false)
     }
@@ -174,300 +164,346 @@ export default function RelatorioForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setError('')
 
     try {
       if (isEditing) {
         await api.put(`/relatorios/${id}/`, formData)
+        showToast('Relatório atualizado com sucesso!', 'success')
       } else {
         await api.post('/relatorios/', formData)
+        showToast('Relatório criado com sucesso!', 'success')
       }
-      navigate('/relatorios')
+      navigate('/dashboard')
     } catch (err: any) {
       const errorMsg = err.response?.data?.query_sql?.[0] ||
-                       err.response?.data?.erro ||
-                       'Erro ao salvar relatório'
-      setError(errorMsg)
+        err.response?.data?.erro ||
+        'Erro ao salvar relatório'
+      showToast(errorMsg, 'error')
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-white mb-6">
-        {isEditing ? 'Editar Relatório' : 'Novo Relatório'}
-      </h1>
+  if (loadingData) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-slate-400">Carregando...</p>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
 
-      {isEditing && (
-        <div className="flex gap-2 mb-6 border-b border-slate-700">
+  return (
+    <AppLayout>
+      <div className="p-6 max-w-5xl mx-auto">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm mb-6">
+          <Link to="/dashboard" className="text-slate-400 hover:text-white transition-colors">
+            Dashboard
+          </Link>
+          <ChevronRight className="w-4 h-4 text-slate-600" />
+          <Link to="/relatorios" className="text-slate-400 hover:text-white transition-colors">
+            Relatórios
+          </Link>
+          <ChevronRight className="w-4 h-4 text-slate-600" />
+          <span className="text-white">
+            {isEditing ? 'Editar' : 'Novo'}
+          </span>
+        </nav>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              {isEditing ? 'Editar Relatório' : 'Novo Relatório'}
+            </h1>
+            {isEditing && formData.nome && (
+              <p className="text-slate-400 mt-1">{formData.nome}</p>
+            )}
+          </div>
           <button
-            type="button"
-            onClick={() => setAbaAtiva('dados')}
-            className={`px-4 py-2 ${
-              abaAtiva === 'dados'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
           >
-            Dados do Relatório
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
           </button>
-          <button
-            type="button"
-            onClick={() => setAbaAtiva('filtros')}
-            className={`px-4 py-2 ${
-              abaAtiva === 'filtros'
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Filtros
-          </button>
-          {isAdmin && (
+        </div>
+
+        {/* Tabs */}
+        {isEditing && (
+          <div className="flex gap-1 mb-6 bg-slate-800/50 p-1 rounded-lg w-fit">
             <button
               type="button"
-              onClick={() => setAbaAtiva('permissoes')}
-              className={`px-4 py-2 ${
-                abaAtiva === 'permissoes'
-                  ? 'border-b-2 border-purple-500 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => setAbaAtiva('dados')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${abaAtiva === 'dados'
+                  ? 'bg-primary-600 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
             >
-              Permissões
+              <FileText className="w-4 h-4" />
+              Dados
             </button>
-          )}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6" style={{ display: abaAtiva === 'dados' ? 'block' : 'none' }}>
-        <div className="bg-slate-800 p-6 rounded-lg space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Nome *
-            </label>
-            <input
-              type="text"
-              value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Descrição
-            </label>
-            <textarea
-              value={formData.descricao}
-              onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Pasta
-            </label>
-            <select
-              value={formData.pasta}
-              onChange={(e) => setFormData({ ...formData, pasta: e.target.value })}
-              className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
+            <button
+              type="button"
+              onClick={() => setAbaAtiva('filtros')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${abaAtiva === 'filtros'
+                  ? 'bg-primary-600 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
             >
-              <option value="">Sem pasta (raiz)</option>
-              {getPastasComCaminho().map(({ id, caminho, nivel }) => (
-                <option key={id} value={id}>
-                  {'  '.repeat(nivel)}📁 {caminho}
-                </option>
-              ))}
-            </select>
-            <p className="text-slate-500 text-xs mt-1">
-              Organize seu relatório em pastas para melhor navegação
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Conexão *
-            </label>
-            <select
-              value={formData.conexao}
-              onChange={(e) => setFormData({ ...formData, conexao: e.target.value })}
-              className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
-              required
-            >
-              <option value="">Selecione uma conexão</option>
-              {conexoes.map(con => (
-                <option key={con.id} value={con.id}>{con.nome}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-slate-300">
-                Query SQL *
-              </label>
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={handleTestar}
-                  disabled={testando}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition disabled:opacity-50"
-                >
-                  {testando ? 'Testando...' : 'Testar (10 linhas)'}
-                </button>
-              )}
-            </div>
-            <textarea
-              value={formData.query_sql}
-              onChange={(e) => setFormData({ ...formData, query_sql: e.target.value })}
-              className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none font-mono text-sm"
-              rows={12}
-              placeholder="SELECT * FROM tabela WHERE ..."
-              required
-            />
-            <p className="text-slate-500 text-xs mt-1">
-              Apenas queries SELECT são permitidas
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Limite de linhas em tela
-              </label>
-              <input
-                type="number"
-                value={formData.limite_linhas_tela}
-                onChange={(e) => setFormData({ ...formData, limite_linhas_tela: parseInt(e.target.value) })}
-                className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-purple-500 focus:outline-none"
-                min={1}
-                max={10000}
-              />
-            </div>
-
-            <div className="flex items-center">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.permite_exportar}
-                  onChange={(e) => setFormData({ ...formData, permite_exportar: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 bg-slate-700 border-slate-600 rounded focus:ring-purple-500"
-                />
-                <span className="ml-2 text-sm text-slate-300">Permite exportar Excel</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {error && (
-          <div className="bg-red-500/20 text-red-400 p-4 rounded">
-            {error}
-          </div>
-        )}
-
-        {resultadoTeste && (
-          <div className="bg-slate-800 p-4 rounded-lg">
-            {resultadoTeste.sucesso ? (
-              <div>
-                <div className="text-green-400 font-semibold mb-2">
-                  ✓ Query válida! {resultadoTeste.total_linhas} linhas encontradas
-                </div>
-                <div className="overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-700">
-                      <tr>
-                        {resultadoTeste.colunas.map((col: string) => (
-                          <th key={col} className="text-left p-2 text-slate-300">{col}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {resultadoTeste.dados.slice(0, 3).map((row: any, i: number) => (
-                        <tr key={i} className="border-t border-slate-700">
-                          {resultadoTeste.colunas.map((col: string) => (
-                            <td key={col} className="p-2 text-white">{row[col]}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className="text-red-400">
-                ✗ Erro: {resultadoTeste.erro}
-              </div>
+              <Filter className="w-4 h-4" />
+              Filtros
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setAbaAtiva('permissoes')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${abaAtiva === 'permissoes'
+                    ? 'bg-primary-600 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                  }`}
+              >
+                <Shield className="w-4 h-4" />
+                Permissões
+              </button>
             )}
           </div>
         )}
 
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
-          >
-            {loading ? 'Salvando...' : 'Salvar'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/relatorios')}
-            className="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded transition"
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
+        {/* Form - Dados */}
+        <form onSubmit={handleSubmit} className="space-y-6" style={{ display: abaAtiva === 'dados' ? 'block' : 'none' }}>
+          <div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-xl space-y-5">
+            <div className="grid grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Nome do Relatório *
+                </label>
+                <input
+                  type="text"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                  placeholder="Ex: Relatório de Vendas Mensal"
+                  required
+                />
+              </div>
 
-      {isEditing && abaAtiva === 'filtros' && (
-        <div className="space-y-6">
-          <div className="bg-slate-800 p-6 rounded-lg">
-            <FiltroForm filtros={filtros} onChange={setFiltros} />
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Pasta
+                </label>
+                <select
+                  value={formData.pasta}
+                  onChange={(e) => setFormData({ ...formData, pasta: e.target.value })}
+                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                >
+                  <option value="">📁 Raiz (sem pasta)</option>
+                  {getPastasComCaminho().map(({ id, caminho, nivel }) => (
+                    <option key={id} value={id}>
+                      {'  '.repeat(nivel)}📁 {caminho}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Descrição
+              </label>
+              <textarea
+                value={formData.descricao}
+                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors resize-none"
+                rows={2}
+                placeholder="Descreva o objetivo do relatório..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Conexão *
+              </label>
+              <select
+                value={formData.conexao}
+                onChange={(e) => setFormData({ ...formData, conexao: e.target.value })}
+                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                required
+              >
+                <option value="">Selecione uma conexão</option>
+                {conexoes.map(con => (
+                  <option key={con.id} value={con.id}>{con.nome}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-slate-300">
+                  Query SQL *
+                </label>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleTestar}
+                    disabled={testando}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
+                  >
+                    <Play className="w-3 h-3" />
+                    {testando ? 'Testando...' : 'Testar Query'}
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={formData.query_sql}
+                onChange={(e) => setFormData({ ...formData, query_sql: e.target.value })}
+                className="w-full bg-slate-900 text-green-400 px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none font-mono text-sm"
+                rows={10}
+                placeholder="SELECT * FROM tabela WHERE ..."
+                required
+              />
+              <p className="text-slate-500 text-xs mt-2">
+                💡 Use parâmetros como <code className="bg-slate-700 px-1 rounded">{'{{nome_filtro}}'}</code> para criar filtros dinâmicos
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Limite de linhas em tela
+                </label>
+                <input
+                  type="number"
+                  value={formData.limite_linhas_tela}
+                  onChange={(e) => setFormData({ ...formData, limite_linhas_tela: parseInt(e.target.value) })}
+                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                  min={1}
+                  max={10000}
+                />
+              </div>
+
+              <div className="flex items-center">
+                <label className="flex items-center cursor-pointer gap-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.permite_exportar}
+                    onChange={(e) => setFormData({ ...formData, permite_exportar: e.target.checked })}
+                    className="w-5 h-5 text-primary-600 bg-slate-700 border-slate-600 rounded focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-slate-300">Permitir exportação para Excel</span>
+                </label>
+              </div>
+            </div>
           </div>
 
-          {error && (
-            <div className="bg-red-500/20 text-red-400 p-4 rounded">
-              {error}
+          {/* Resultado do teste */}
+          {resultadoTeste && (
+            <div className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl">
+              {resultadoTeste.sucesso ? (
+                <div>
+                  <div className="text-green-400 font-semibold mb-3 flex items-center gap-2">
+                    ✓ Query válida! {resultadoTeste.total_linhas} linhas encontradas
+                  </div>
+                  <div className="overflow-auto rounded-lg border border-slate-700">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-700/50">
+                        <tr>
+                          {resultadoTeste.colunas.map((col: string) => (
+                            <th key={col} className="text-left p-3 text-slate-300 font-medium">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resultadoTeste.dados.slice(0, 3).map((row: any, i: number) => (
+                          <tr key={i} className="border-t border-slate-700">
+                            {resultadoTeste.colunas.map((col: string) => (
+                              <td key={col} className="p-3 text-white">{row[col]}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-red-400">
+                  ✗ Erro: {resultadoTeste.erro}
+                </div>
+              )}
             </div>
           )}
 
-          <div className="flex gap-4">
+          {/* Botões */}
+          <div className="flex gap-3">
             <button
-              type="button"
-              onClick={salvarFiltros}
-              disabled={salvandoFiltros}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+              type="submit"
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium"
             >
-              {salvandoFiltros ? 'Salvando...' : 'Salvar Filtros'}
+              <Save className="w-4 h-4" />
+              {loading ? 'Salvando...' : 'Salvar Relatório'}
             </button>
             <button
               type="button"
-              onClick={() => navigate('/relatorios')}
-              className="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded transition"
+              onClick={() => navigate('/dashboard')}
+              className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
             >
-              Voltar
+              Cancelar
             </button>
           </div>
-        </div>
-      )}
+        </form>
 
-      {isEditing && abaAtiva === 'permissoes' && isAdmin && (
-        <div className="space-y-6">
-          <PermissoesForm relatorioId={id!} />
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => navigate('/relatorios')}
-              className="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded transition"
-            >
-              Voltar
-            </button>
+        {/* Tab - Filtros */}
+        {isEditing && abaAtiva === 'filtros' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-xl">
+              <FiltroForm filtros={filtros} onChange={setFiltros} />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={salvarFiltros}
+                disabled={salvandoFiltros}
+                className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium"
+              >
+                <Save className="w-4 h-4" />
+                {salvandoFiltros ? 'Salvando...' : 'Salvar Filtros'}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                Voltar
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Tab - Permissões */}
+        {isEditing && abaAtiva === 'permissoes' && isAdmin && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-xl">
+              <PermissoesForm relatorioId={id!} />
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                Voltar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </AppLayout>
   )
 }
