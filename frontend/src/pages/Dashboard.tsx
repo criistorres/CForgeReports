@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Grid, List, Download, SortAsc, Trash2, Copy, FolderInput } from 'lucide-react'
+import { Search, Plus, Grid, List, Download, SortAsc, Trash2, Copy, FolderInput, FileText } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { FolderTree, ReportListItem, Breadcrumb, PastaModal } from '@/components/features'
@@ -11,6 +11,9 @@ import type { Relatorio } from '@/components/features/ReportListItem'
 import api from '@/services/api'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
+import { EmptyState } from '@/components/ui/empty-state'
+import { getErrorMessage } from '@/utils/errorMessages'
 
 interface Execucao {
   id: string
@@ -28,6 +31,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { confirm, ConfirmComponent } = useConfirm()
 
   // Estados principais
   const [pastas, setPastas] = useState<PastaNode[]>([])
@@ -93,9 +97,10 @@ export default function Dashboard() {
       setFavoritos(favIds)
 
       setRecentes(recentesRes.data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar dados:', error)
-      showToast('Erro ao carregar dados do dashboard', 'error')
+      const mensagem = getErrorMessage(error)
+      showToast(mensagem, 'error')
     } finally {
       setLoading(false)
     }
@@ -153,8 +158,10 @@ export default function Dashboard() {
         try {
           const res = await api.get(`/relatorios/?pasta_id=${pastaSelecionada}`)
           setRelatorios(res.data)
-        } catch (error) {
+        } catch (error: any) {
           console.error('Erro ao carregar relatórios:', error)
+          const mensagem = getErrorMessage(error)
+          showToast(mensagem, 'error')
         } finally {
           setLoadingRelatorios(false)
         }
@@ -163,8 +170,10 @@ export default function Dashboard() {
         try {
           const res = await api.get('/relatorios/')
           setRelatorios(res.data)
-        } catch (error) {
+        } catch (error: any) {
           console.error('Erro ao carregar relatórios:', error)
+          const mensagem = getErrorMessage(error)
+          showToast(mensagem, 'error')
         } finally {
           setLoadingRelatorios(false)
         }
@@ -219,9 +228,10 @@ export default function Dashboard() {
         })
         showToast('Removido dos favoritos', 'success')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar favorito:', error)
-      showToast('Erro ao atualizar favorito', 'error')
+      const mensagem = getErrorMessage(error)
+      showToast(mensagem, 'error')
     }
   }
 
@@ -239,12 +249,20 @@ export default function Dashboard() {
   }
 
   const handleExcluirPasta = async (pasta: PastaNode) => {
-    if (!confirm(`Excluir a pasta "${pasta.nome}"?`)) return
-
     if (pasta.qtd_relatorios > 0 || pasta.qtd_subpastas > 0) {
       showToast('Não é possível excluir pasta com relatórios ou subpastas. Mova ou exclua o conteúdo primeiro.', 'error')
       return
     }
+
+    const confirmed = await confirm({
+      title: 'Excluir Pasta',
+      description: `Tem certeza que deseja excluir a pasta "${pasta.nome}"? Esta ação não pode ser desfeita.`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+      variant: 'destructive'
+    })
+
+    if (!confirmed) return
 
     try {
       await api.delete(`/pastas/${pasta.id}/`)
@@ -255,7 +273,8 @@ export default function Dashboard() {
       showToast('Pasta excluída com sucesso', 'success')
     } catch (error: any) {
       console.error('Erro ao excluir pasta:', error)
-      showToast(error.response?.data?.erro || 'Erro ao excluir pasta. Verifique se ela não possui relatórios.', 'error')
+      const mensagem = getErrorMessage(error)
+      showToast(mensagem, 'error')
     }
   }
 
@@ -290,7 +309,16 @@ export default function Dashboard() {
   const handleExcluirSelecionados = async () => {
     if (relatoriosSelecionados.size === 0) return
 
-    if (!confirm(`Excluir ${relatoriosSelecionados.size} relatório(s)?`)) return
+    const quantidade = relatoriosSelecionados.size
+    const confirmed = await confirm({
+      title: 'Excluir Relatórios',
+      description: `Tem certeza que deseja excluir ${quantidade} relatório${quantidade > 1 ? 's' : ''}? Esta ação não pode ser desfeita.`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+      variant: 'destructive'
+    })
+
+    if (!confirmed) return
 
     try {
       await Promise.all(
@@ -303,9 +331,10 @@ export default function Dashboard() {
       setRelatoriosSelecionados(new Set())
       setModoSelecao(false)
       showToast('Relatórios excluídos com sucesso', 'success')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao excluir relatórios:', error)
-      showToast('Erro ao excluir alguns relatórios', 'error')
+      const mensagem = getErrorMessage(error)
+      showToast(mensagem, 'error')
     }
   }
 
@@ -331,9 +360,10 @@ export default function Dashboard() {
       const pastasFlat = pastasRes.data as PastaNode[]
       const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, res.data)
       setPastas(pastasComRelatorios)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao mover relatórios:', error)
-      showToast('Erro ao mover alguns relatórios', 'error')
+      const mensagem = getErrorMessage(error)
+      showToast(mensagem, 'error')
     }
   }
 
@@ -648,14 +678,27 @@ export default function Dashboard() {
                     <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : relatoriosFiltrados.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                    <p className="text-lg mb-2">
-                      {busca ? 'Nenhum relatório encontrado' : 'Nenhum relatório nesta pasta'}
-                    </p>
-                    {viewAtual === 'favoritos' && !busca && (
-                      <p className="text-sm">Clique na ⭐ para adicionar relatórios aos favoritos</p>
-                    )}
-                  </div>
+                  <EmptyState
+                    icon={FileText}
+                    title={busca ? 'Nenhum relatório encontrado' : 'Nenhum relatório aqui'}
+                    description={
+                      busca
+                        ? `Não encontramos relatórios que correspondam a "${busca}". Tente buscar com outros termos.`
+                        : viewAtual === 'favoritos'
+                          ? 'Você ainda não tem relatórios favoritos. Clique na estrela ⭐ para adicionar relatórios aos favoritos.'
+                          : viewAtual === 'recentes'
+                            ? 'Você ainda não executou nenhum relatório. Execute um relatório para vê-lo aqui.'
+                            : 'Esta pasta está vazia. Crie um novo relatório ou mova relatórios existentes para cá.'
+                    }
+                    action={
+                      viewAtual !== 'favoritos' && viewAtual !== 'recentes'
+                        ? {
+                            label: 'Criar Novo Relatório',
+                            onClick: () => navigate('/relatorios/novo')
+                          }
+                        : undefined
+                    }
+                  />
                 ) : (
                   <>
                     {modoSelecao && (
@@ -711,6 +754,8 @@ export default function Dashboard() {
         pastaSelecionada={pastaSelecionada}
         quantidadeRelatorios={relatoriosSelecionados.size}
       />
+
+      {ConfirmComponent}
     </AppLayout>
   )
 }

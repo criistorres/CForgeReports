@@ -5,6 +5,8 @@ import api from '@/services/api'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { FavoritoButton } from '@/components/features/FavoritoButton'
 import { useToast } from '@/hooks/useToast'
+import { EmptyState } from '@/components/ui/empty-state'
+import { getErrorMessage } from '@/utils/errorMessages'
 
 interface Relatorio {
   id: string
@@ -36,8 +38,9 @@ export default function Relatorios() {
       const params = busca ? `?busca=${encodeURIComponent(busca)}` : ''
       const response = await api.get(`/relatorios/${params}`)
       setRelatorios(response.data)
-    } catch (err) {
-      showToast('Erro ao carregar relatórios', 'error')
+    } catch (err: any) {
+      const mensagem = getErrorMessage(err)
+      showToast(mensagem, 'error')
       console.error(err)
     } finally {
       setLoading(false)
@@ -116,16 +119,19 @@ export default function Relatorios() {
 
         {/* Lista de Relatórios */}
         {relatorios.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700/50 p-12 rounded-xl text-center">
-            <FileText className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 mb-4">Nenhum relatório encontrado</p>
-            <Link
-              to="/relatorios/novo"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Criar Primeiro Relatório
-            </Link>
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+            <EmptyState
+              icon={FileText}
+              title="Nenhum relatório encontrado"
+              description={busca 
+                ? `Não encontramos relatórios que correspondam a "${busca}". Tente buscar com outros termos.`
+                : "Comece criando seu primeiro relatório SQL. Você poderá conectar a bancos de dados e criar consultas personalizadas."
+              }
+              action={{
+                label: 'Criar Primeiro Relatório',
+                onClick: () => window.location.href = '/relatorios/novo'
+              }}
+            />
           </div>
         ) : (
           <div className="space-y-3">

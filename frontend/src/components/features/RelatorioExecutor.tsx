@@ -3,6 +3,7 @@ import { Play, Download, Clock, X, Loader2, AlertCircle, CheckCircle, Star } fro
 import api from '@/services/api'
 import { useToast } from '@/hooks/useToast'
 import { DataTable } from './DataTable'
+import { getErrorMessage } from '@/utils/errorMessages'
 
 interface Filtro {
   id: string
@@ -104,7 +105,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
       showToast(`Relatório executado com sucesso! ${resultado.dados.length} linhas retornadas`, 'success')
     } catch (error: any) {
       console.error('Erro ao executar relatório:', error)
-      const erroMsg = error.response?.data?.erro || error.message || 'Erro desconhecido ao executar relatório'
+      const erroMsg = getErrorMessage(error)
       setErro(erroMsg)
       showToast(erroMsg, 'error')
     } finally {
@@ -183,9 +184,10 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
       window.URL.revokeObjectURL(url)
 
       showToast('Relatório exportado com sucesso!', 'success')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao exportar:', error)
-      showToast('Erro ao exportar relatório', 'error')
+      const erroMsg = getErrorMessage(error)
+      showToast(erroMsg, 'error')
     }
   }
 

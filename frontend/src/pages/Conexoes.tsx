@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Plus, Database, Server, Play, Edit, Trash2, Check, X, AlertCircle, Save } from 'lucide-react'
+import { Plus, Database, Server, Play, Edit, Trash2, Check, X, AlertCircle, Save, Loader2 } from 'lucide-react'
 import api from '@/services/api'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
+import { getConnectionErrorMessage } from '@/utils/errorMessages'
+import { ValidatedInput } from '@/components/ui/validated-input'
 
 interface Conexao {
   id: string
@@ -44,7 +47,50 @@ export default function Conexoes() {
   })
   const [testando, setTestando] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [testandoId, setTestandoId] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const { showToast } = useToast()
+  const { confirm, ConfirmComponent } = useConfirm()
+
+  // Validações
+  const validateNome = (value: string) => {
+    if (!value.trim()) return 'Nome é obrigatório'
+    if (value.length < 3) return 'Nome deve ter pelo menos 3 caracteres'
+    return null
+  }
+
+  const validateHost = (value: string) => {
+    if (!value.trim()) return 'Host é obrigatório'
+    // Validação básica de hostname/IP
+    const hostPattern = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$|^(\d{1,3}\.){3}\d{1,3}$|^localhost$/
+    if (!hostPattern.test(value) && value !== 'localhost') {
+      return 'Host inválido. Use um hostname válido, IP ou localhost'
+    }
+    return null
+  }
+
+  const validatePorta = (value: string) => {
+    const porta = parseInt(value)
+    if (isNaN(porta)) return 'Porta deve ser um número'
+    if (porta < 1 || porta > 65535) return 'Porta deve estar entre 1 e 65535'
+    return null
+  }
+
+  const validateDatabase = (value: string) => {
+    if (!value.trim()) return 'Database é obrigatório'
+    if (value.length < 1) return 'Database é obrigatório'
+    return null
+  }
+
+  const validateUsuario = (value: string) => {
+    if (!value.trim()) return 'Usuário é obrigatório'
+    return null
+  }
+
+  const validateSenha = (value: string) => {
+    if (!editingId && !value.trim()) return 'Senha é obrigatória'
+    return null
+  }
 
   useEffect(() => {
     fetchConexoes()
@@ -64,6 +110,7 @@ export default function Conexoes() {
   }
 
   async function testarConexao(id: string) {
+    setTestandoId(id)
     try {
       const response = await api.post(`/conexoes/${id}/testar-existente/`)
       if (response.data.sucesso) {
@@ -73,22 +120,31 @@ export default function Conexoes() {
       }
       fetchConexoes()
     } catch (err: any) {
-      const mensagem = err.response?.data?.mensagem || 'Erro ao testar conexão'
+      const mensagem = getConnectionErrorMessage(err)
       showToast(mensagem, 'error')
+    } finally {
+      setTestandoId(null)
     }
   }
 
   async function deletarConexao(id: string, nome: string) {
-    if (!confirm(`Tem certeza que deseja deletar a conexão "${nome}"?`)) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Excluir Conexão',
+      description: `Tem certeza que deseja excluir a conexão "${nome}"? Esta ação não pode ser desfeita.`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+      variant: 'destructive'
+    })
+
+    if (!confirmed) return
 
     try {
       await api.delete(`/conexoes/${id}/`)
-      showToast('Conexão deletada com sucesso', 'success')
+      showToast('Conexão excluída com sucesso', 'success')
       fetchConexoes()
-    } catch (err) {
-      showToast('Erro ao deletar conexão', 'error')
+    } catch (err: any) {
+      const mensagem = getConnectionErrorMessage(err)
+      showToast(mensagem, 'error')
       console.error(err)
     }
   }
@@ -103,6 +159,7 @@ export default function Conexoes() {
       usuario: '',
       senha: ''
     })
+    setErrors({})
     setEditingId(null)
     setShowForm(true)
   }
@@ -117,6 +174,7 @@ export default function Conexoes() {
       usuario: conexao.usuario,
       senha: ''
     })
+    setErrors({})
     setEditingId(conexao.id)
     setShowForm(true)
   }
@@ -140,7 +198,7 @@ export default function Conexoes() {
         showToast(response.data.mensagem, 'error')
       }
     } catch (err: any) {
-      const mensagem = err.response?.data?.mensagem || 'Erro ao testar conexão'
+      const mensagem = getConnectionErrorMessage(err)
       showToast(mensagem, 'error')
     } finally {
       setTestando(false)
@@ -149,7 +207,31 @@ export default function Conexoes() {
 
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
+    
+    // Validação antes de enviar
+    const validationErrors: Record<string, string> = {}
+    const nomeError = validateNome(formData.nome)
+    const hostError = validateHost(formData.host)
+    const portaError = validatePorta(formData.porta.toString())
+    const databaseError = validateDatabase(formData.database)
+    const usuarioError = validateUsuario(formData.usuario)
+    const senhaError = validateSenha(formData.senha)
+
+    if (nomeError) validationErrors.nome = nomeError
+    if (hostError) validationErrors.host = hostError
+    if (portaError) validationErrors.porta = portaError
+    if (databaseError) validationErrors.database = databaseError
+    if (usuarioError) validationErrors.usuario = usuarioError
+    if (senhaError) validationErrors.senha = senhaError
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      showToast('Por favor, corrija os erros no formulário', 'error')
+      return
+    }
+
     setSalvando(true)
+    setErrors({})
 
     try {
       if (editingId) {
@@ -162,8 +244,21 @@ export default function Conexoes() {
       setShowForm(false)
       fetchConexoes()
     } catch (err: any) {
-      const mensagem = err.response?.data?.detail || 'Erro ao salvar conexão'
+      const mensagem = getConnectionErrorMessage(err)
       showToast(mensagem, 'error')
+      
+      // Se houver erros de validação do backend, mostrar nos campos
+      if (err.response?.data) {
+        const backendErrors: Record<string, string> = {}
+        Object.keys(err.response.data).forEach(key => {
+          if (Array.isArray(err.response.data[key])) {
+            backendErrors[key] = err.response.data[key][0]
+          } else {
+            backendErrors[key] = err.response.data[key]
+          }
+        })
+        setErrors(backendErrors)
+      }
     } finally {
       setSalvando(false)
     }
@@ -224,19 +319,18 @@ export default function Conexoes() {
 
             <form onSubmit={handleSalvar} className="space-y-5">
               <div className="grid grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Nome da Conexão *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
-                    placeholder="Ex: Produção, Desenvolvimento..."
-                    required
-                  />
-                </div>
+                <ValidatedInput
+                  label="Nome da Conexão"
+                  value={formData.nome}
+                  onChange={(e) => {
+                    setFormData({ ...formData, nome: e.target.value })
+                    setErrors({ ...errors, nome: '' })
+                  }}
+                  validate={validateNome}
+                  error={errors.nome}
+                  placeholder="Ex: Produção, Desenvolvimento..."
+                  required
+                />
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Tipo de Banco *
@@ -256,72 +350,75 @@ export default function Conexoes() {
 
               <div className="grid grid-cols-4 gap-5">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Host *
-                  </label>
-                  <input
+                  <ValidatedInput
+                    label="Host"
                     type="text"
                     value={formData.host}
-                    onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                    onChange={(e) => {
+                      setFormData({ ...formData, host: e.target.value })
+                      setErrors({ ...errors, host: '' })
+                    }}
+                    validate={validateHost}
+                    error={errors.host}
                     placeholder="localhost ou IP do servidor"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Porta *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.porta}
-                    onChange={(e) => setFormData({ ...formData, porta: parseInt(e.target.value) })}
-                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Database *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.database}
-                    onChange={(e) => setFormData({ ...formData, database: e.target.value })}
-                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
-                    placeholder="Nome do banco"
-                    required
-                  />
-                </div>
+                <ValidatedInput
+                  label="Porta"
+                  type="number"
+                  value={formData.porta.toString()}
+                  onChange={(e) => {
+                    const porta = parseInt(e.target.value) || 0
+                    setFormData({ ...formData, porta })
+                    setErrors({ ...errors, porta: '' })
+                  }}
+                  validate={validatePorta}
+                  error={errors.porta}
+                  required
+                />
+                <ValidatedInput
+                  label="Database"
+                  type="text"
+                  value={formData.database}
+                  onChange={(e) => {
+                    setFormData({ ...formData, database: e.target.value })
+                    setErrors({ ...errors, database: '' })
+                  }}
+                  validate={validateDatabase}
+                  error={errors.database}
+                  placeholder="Nome do banco"
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Usuário *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.usuario}
-                    onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
-                    placeholder="Usuário do banco"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Senha {editingId && <span className="text-slate-500">(deixe em branco para manter)</span>}
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.senha}
-                    onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
-                    placeholder="••••••••"
-                    required={!editingId}
-                  />
-                </div>
+                <ValidatedInput
+                  label="Usuário"
+                  type="text"
+                  value={formData.usuario}
+                  onChange={(e) => {
+                    setFormData({ ...formData, usuario: e.target.value })
+                    setErrors({ ...errors, usuario: '' })
+                  }}
+                  validate={validateUsuario}
+                  error={errors.usuario}
+                  placeholder="Usuário do banco"
+                  required
+                />
+                <ValidatedInput
+                  label={`Senha ${editingId ? '(deixe em branco para manter)' : ''}`}
+                  type="password"
+                  value={formData.senha}
+                  onChange={(e) => {
+                    setFormData({ ...formData, senha: e.target.value })
+                    setErrors({ ...errors, senha: '' })
+                  }}
+                  validate={validateSenha}
+                  error={errors.senha}
+                  placeholder="••••••••"
+                  required={!editingId}
+                />
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -329,18 +426,36 @@ export default function Conexoes() {
                   type="button"
                   onClick={handleTestarFormulario}
                   disabled={testando}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Play className="w-4 h-4" />
-                  {testando ? 'Testando...' : 'Testar Conexão'}
+                  {testando ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Testando...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      Testar Conexão
+                    </>
+                  )}
                 </button>
                 <button
                   type="submit"
                   disabled={salvando}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
-                  <Save className="w-4 h-4" />
-                  {salvando ? 'Salvando...' : 'Salvar'}
+                  {salvando ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Salvar
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -356,17 +471,23 @@ export default function Conexoes() {
 
         {/* Lista de Conexões */}
         {conexoes.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700/50 p-12 rounded-xl text-center">
-            <Database className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 mb-2 text-lg">Nenhuma conexão cadastrada</p>
-            <p className="text-slate-500 mb-4">Adicione sua primeira conexão de banco de dados</p>
-            <button
-              onClick={handleNovaConexao}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Nova Conexão
-            </button>
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mb-4">
+                <Database className="w-8 h-8 text-slate-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Nenhuma conexão cadastrada</h3>
+              <p className="text-sm text-slate-400 max-w-md mb-6">
+                Comece adicionando sua primeira conexão de banco de dados para criar relatórios
+              </p>
+              <button
+                onClick={handleNovaConexao}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Nova Conexão
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -437,11 +558,21 @@ export default function Conexoes() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => testarConexao(conexao.id)}
-                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm"
+                      disabled={testandoId === conexao.id}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm"
                       title="Testar conexão"
                     >
-                      <Play className="w-4 h-4" />
-                      Testar
+                      {testandoId === conexao.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Testando...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" />
+                          Testar
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={() => handleEditarConexao(conexao)}
@@ -465,6 +596,7 @@ export default function Conexoes() {
           </div>
         )}
       </div>
+      {ConfirmComponent}
     </AppLayout>
   )
 }

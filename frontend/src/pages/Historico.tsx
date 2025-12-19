@@ -6,6 +6,8 @@ import { useToast } from '@/hooks/useToast'
 import api from '@/services/api'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { EmptyState } from '@/components/ui/empty-state'
+import { getErrorMessage } from '@/utils/errorMessages'
 
 interface Execucao {
   id: string
@@ -45,8 +47,9 @@ export default function Historico() {
 
       const response = await api.get(`/historico/?${params.toString()}`)
       setExecucoes(response.data)
-    } catch (error) {
-      showToast('Erro ao carregar histórico', 'error')
+    } catch (error: any) {
+      const mensagem = getErrorMessage(error)
+      showToast(mensagem, 'error')
       console.error('Erro ao carregar histórico:', error)
     } finally {
       setLoading(false)
@@ -123,10 +126,16 @@ export default function Historico() {
 
         {/* Lista de Execuções */}
         {execucoes.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700/50 p-12 rounded-xl text-center">
-            <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 text-lg">Nenhuma execução encontrada</p>
-            <p className="text-slate-500 mt-1">Execute um relatório para ver o histórico aqui</p>
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+            <EmptyState
+              icon={Clock}
+              title="Nenhuma execução encontrada"
+              description="Execute um relatório para ver o histórico de execuções aqui. Você poderá ver detalhes de cada execução, incluindo tempo de processamento e resultados."
+              action={{
+                label: 'Ir para Dashboard',
+                onClick: () => window.location.href = '/dashboard'
+              }}
+            />
           </div>
         ) : (
           <div className="space-y-3">

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgeCard, ForgeButton, ForgeInput, ForgeLabel } from '@/components/forge';
 import { ForgeLogo } from '@/components/layout/ForgeLogo';
+import { getAuthErrorMessage } from '@/utils/errorMessages';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,8 +22,8 @@ export default function Login() {
     try {
       await login(email, password);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Email ou senha inválidos');
+    } catch (err: any) {
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

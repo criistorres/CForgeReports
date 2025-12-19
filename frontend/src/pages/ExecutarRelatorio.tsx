@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import api from '../services/api'
 import FiltroInput from '../components/features/FiltroInput'
 import type { Filtro } from '../components/features/FiltroForm'
+import { getErrorMessage } from '../utils/errorMessages'
 
 interface Relatorio {
   id: string
@@ -77,7 +78,7 @@ export default function ExecutarRelatorio() {
       })
       setResultado(response.data)
     } catch (err: any) {
-      const errorMsg = err.response?.data?.erro || 'Erro ao executar relatório'
+      const errorMsg = getErrorMessage(err)
       setError(errorMsg)
     } finally {
       setLoading(false)
@@ -100,7 +101,7 @@ export default function ExecutarRelatorio() {
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
     } catch (err: any) {
-      const errorMsg = err.response?.data?.erro || 'Erro ao exportar'
+      const errorMsg = getErrorMessage(err)
       setError(errorMsg)
     } finally {
       setExportando(false)
