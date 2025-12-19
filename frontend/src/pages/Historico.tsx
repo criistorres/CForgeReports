@@ -79,7 +79,7 @@ export default function Historico() {
         <div className="p-6">
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
               <p className="text-slate-400">Carregando histórico...</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default function Historico() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Clock className="w-6 h-6 text-primary-400" />
+            <Clock className="w-6 h-6 text-purple-400" />
             Histórico de Execuções
           </h1>
           <p className="text-slate-400 mt-1">
@@ -105,7 +105,7 @@ export default function Historico() {
         {/* Filtros */}
         <div className="bg-slate-800/50 border border-slate-700/50 p-5 rounded-xl mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-4 h-4 text-primary-400" />
+            <Filter className="w-4 h-4 text-purple-400" />
             <h2 className="text-sm font-semibold text-white">Filtros</h2>
           </div>
           <div className="flex gap-4">
@@ -114,7 +114,7 @@ export default function Historico() {
               <select
                 value={filtros.sucesso}
                 onChange={(e) => setFiltros({ ...filtros, sucesso: e.target.value })}
-                className="bg-slate-800/50 text-white px-4 py-2.5 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors min-w-[150px]"
+                className="bg-slate-800/50 text-white px-4 py-2.5 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors min-w-[150px]"
               >
                 <option value="">Todos</option>
                 <option value="true">✓ Sucesso</option>
@@ -142,14 +142,14 @@ export default function Historico() {
             {execucoes.map((exec) => (
               <div
                 key={exec.id}
-                className="bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 p-5 rounded-xl transition-all"
+                className="bg-slate-800/50 border border-slate-700/50 hover:border-purple-500/30 p-5 rounded-xl transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1">
                     {/* Ícone de status */}
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${exec.sucesso
-                        ? 'bg-green-500/20'
-                        : 'bg-red-500/20'
+                      ? 'bg-green-500/20'
+                      : 'bg-red-500/20'
                       }`}>
                       {exec.sucesso
                         ? <Check className="w-5 h-5 text-green-400" />
@@ -171,7 +171,7 @@ export default function Historico() {
                           </span>
                         )}
                         {exec.exportou && (
-                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
                             📥 Exportado
                           </span>
                         )}
@@ -211,7 +211,7 @@ export default function Historico() {
                   {/* Ação */}
                   <Link
                     to={`/relatorios/${exec.relatorio_id}/executar`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors text-sm ml-4"
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors text-sm ml-4"
                   >
                     <Play className="w-4 h-4" />
                     Re-executar

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, MoreHorizontal, User, Search } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DataTable } from '@/components/features/DataTable';
+import { useToast } from '@/hooks/useToast';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const STATUS_LABELS: Record<UserStatus, { label: string; variant: string }> = {
@@ -26,6 +27,7 @@ export function ListaUsuarios() {
     const [loading, setLoading] = useState(true);
     const [busca, setBusca] = useState('');
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     useEffect(() => {
         loadUsuarios();
@@ -46,9 +48,9 @@ export function ListaUsuarios() {
     const handleReenviarConvite = async (id: string) => {
         try {
             await usuarioService.reenviarConvite(id);
-            alert('Convite reenviado com sucesso!');
+            showToast('Convite reenviado com sucesso!', 'success');
         } catch (error) {
-            alert('Erro ao reenviar convite');
+            showToast('Erro ao reenviar convite', 'error');
         }
     };
 

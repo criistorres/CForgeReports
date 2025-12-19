@@ -40,11 +40,11 @@ export function UserMenu() {
   const getAvatarColor = (name: string) => {
     const colors = [
       'from-purple-500 to-pink-500',
-      'from-blue-500 to-cyan-500',
-      'from-green-500 to-emerald-500',
-      'from-orange-500 to-red-500',
+      'from-violet-500 to-indigo-500',
+      'from-fuchsia-500 to-purple-500',
+      'from-purple-600 to-violet-600',
       'from-indigo-500 to-purple-500',
-      'from-teal-500 to-green-500',
+      'from-violet-400 to-purple-400',
     ]
     const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     return colors[hash % colors.length]

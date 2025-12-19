@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import { useToast } from '@/hooks/useToast';
 
 const ROLE_OPTIONS = [
     { value: 'ADMIN', label: 'Administrador' },
@@ -21,6 +21,7 @@ const ROLE_OPTIONS = [
 
 export function ModalCriarUsuario() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState<CreateUsuarioData>({
         nome: '',
@@ -34,11 +35,11 @@ export function ModalCriarUsuario() {
         try {
             setLoading(true);
             await usuarioService.create(formData);
-            alert('Usuário criado! Email de convite enviado.');
+            showToast('Usuário criado! Email de convite enviado.', 'success');
             navigate('/usuarios');
         } catch (error: any) {
             const message = error.response?.data?.email?.[0] || 'Erro ao criar usuário';
-            alert(message);
+            showToast(message, 'error');
         } finally {
             setLoading(false);
         }
@@ -46,56 +47,70 @@ export function ModalCriarUsuario() {
 
     return (
         <Dialog open onOpenChange={() => navigate('/usuarios')}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] bg-slate-900 border-slate-800 text-white">
                 <DialogHeader>
-                    <DialogTitle>Novo Usuário</DialogTitle>
+                    <DialogTitle className="text-white">Novo Usuário</DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <Label htmlFor="nome">Nome</Label>
+                    <div className="space-y-2">
+                        <Label htmlFor="nome" className="text-slate-300">Nome</Label>
                         <Input
                             id="nome"
                             value={formData.nome}
                             onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                            className="bg-slate-800/50 border-slate-700 text-white focus:border-purple-500"
+                            placeholder="Nome Completo"
                             required
                         />
                     </div>
 
-                    <div>
-                        <Label htmlFor="email">Email</Label>
+                    <div className="space-y-2">
+                        <Label htmlFor="email" className="text-slate-300">Email</Label>
                         <Input
                             id="email"
                             type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="bg-slate-800/50 border-slate-700 text-white focus:border-purple-500"
+                            placeholder="email@exemplo.com"
                             required
                         />
                     </div>
 
-                    <div>
-                        <Label htmlFor="role">Perfil</Label>
-                        <Select
+                    <div className="space-y-2">
+                        <Label htmlFor="role" className="text-slate-300">Perfil</Label>
+                        <select
+                            id="role"
                             value={formData.role}
                             onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2.5 px-3 text-white focus:outline-none focus:border-purple-500 appearance-none"
                         >
                             {ROLE_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
+                                <option key={option.value} value={option.value} className="bg-slate-900">
                                     {option.label}
                                 </option>
                             ))}
-                        </Select>
+                        </select>
                     </div>
 
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-3 pt-4">
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => navigate('/usuarios')}
+                            className="text-slate-400 hover:text-white hover:bg-slate-800"
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={loading}>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/20"
+                        >
+                            {loading ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                            ) : null}
                             {loading ? 'Criando...' : 'Criar Usuário'}
                         </Button>
                     </div>

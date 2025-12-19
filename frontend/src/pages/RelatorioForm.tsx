@@ -189,7 +189,7 @@ export default function RelatorioForm() {
       <AppLayout>
         <div className="flex items-center justify-center h-64">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
             <p className="text-slate-400">Carregando...</p>
           </div>
         </div>
@@ -241,8 +241,8 @@ export default function RelatorioForm() {
               type="button"
               onClick={() => setAbaAtiva('dados')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${abaAtiva === 'dados'
-                  ? 'bg-primary-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                 }`}
             >
               <FileText className="w-4 h-4" />
@@ -252,8 +252,8 @@ export default function RelatorioForm() {
               type="button"
               onClick={() => setAbaAtiva('filtros')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${abaAtiva === 'filtros'
-                  ? 'bg-primary-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                 }`}
             >
               <Filter className="w-4 h-4" />
@@ -264,8 +264,8 @@ export default function RelatorioForm() {
                 type="button"
                 onClick={() => setAbaAtiva('permissoes')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${abaAtiva === 'permissoes'
-                    ? 'bg-primary-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                   }`}
               >
                 <Shield className="w-4 h-4" />
@@ -287,7 +287,7 @@ export default function RelatorioForm() {
                   type="text"
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors"
                   placeholder="Ex: Relatório de Vendas Mensal"
                   required
                 />
@@ -300,7 +300,7 @@ export default function RelatorioForm() {
                 <select
                   value={formData.pasta}
                   onChange={(e) => setFormData({ ...formData, pasta: e.target.value })}
-                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors"
                 >
                   <option value="">📁 Raiz (sem pasta)</option>
                   {getPastasComCaminho().map(({ id, caminho, nivel }) => (
@@ -319,7 +319,7 @@ export default function RelatorioForm() {
               <textarea
                 value={formData.descricao}
                 onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors resize-none"
+                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors resize-none"
                 rows={2}
                 placeholder="Descreva o objetivo do relatório..."
               />
@@ -332,7 +332,7 @@ export default function RelatorioForm() {
               <select
                 value={formData.conexao}
                 onChange={(e) => setFormData({ ...formData, conexao: e.target.value })}
-                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors"
                 required
               >
                 <option value="">Selecione uma conexão</option>
@@ -352,7 +352,7 @@ export default function RelatorioForm() {
                     type="button"
                     onClick={handleTestar}
                     disabled={testando}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 rounded-lg text-sm transition-colors disabled:opacity-50"
                   >
                     <Play className="w-3 h-3" />
                     {testando ? 'Testando...' : 'Testar Query'}
@@ -362,7 +362,7 @@ export default function RelatorioForm() {
               <textarea
                 value={formData.query_sql}
                 onChange={(e) => setFormData({ ...formData, query_sql: e.target.value })}
-                className="w-full bg-slate-900 text-green-400 px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none font-mono text-sm"
+                className="w-full bg-slate-900 text-purple-400 px-4 py-3 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none font-mono text-sm"
                 rows={10}
                 placeholder="SELECT * FROM tabela WHERE ..."
                 required
@@ -381,7 +381,7 @@ export default function RelatorioForm() {
                   type="number"
                   value={formData.limite_linhas_tela}
                   onChange={(e) => setFormData({ ...formData, limite_linhas_tela: parseInt(e.target.value) })}
-                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors"
                   min={1}
                   max={10000}
                 />
@@ -393,7 +393,7 @@ export default function RelatorioForm() {
                     type="checkbox"
                     checked={formData.permite_exportar}
                     onChange={(e) => setFormData({ ...formData, permite_exportar: e.target.checked })}
-                    className="w-5 h-5 text-primary-600 bg-slate-700 border-slate-600 rounded focus:ring-primary-500"
+                    className="w-5 h-5 text-purple-600 bg-slate-700 border-slate-600 rounded focus:ring-purple-500"
                   />
                   <span className="text-sm text-slate-300">Permitir exportação para Excel</span>
                 </label>
@@ -443,7 +443,7 @@ export default function RelatorioForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium shadow-lg shadow-purple-900/20"
             >
               <Save className="w-4 h-4" />
               {loading ? 'Salvando...' : 'Salvar Relatório'}
@@ -470,7 +470,7 @@ export default function RelatorioForm() {
                 type="button"
                 onClick={salvarFiltros}
                 disabled={salvandoFiltros}
-                className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium"
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors disabled:opacity-50 font-medium shadow-lg shadow-purple-900/20"
               >
                 <Save className="w-4 h-4" />
                 {salvandoFiltros ? 'Salvando...' : 'Salvar Filtros'}

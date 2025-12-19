@@ -205,7 +205,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
             type="date"
             value={valor}
             onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
+            className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all"
             required={filtro.obrigatorio}
           />
         )
@@ -216,7 +216,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
             type="number"
             value={valor}
             onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
+            className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all"
             required={filtro.obrigatorio}
           />
         )
@@ -226,12 +226,12 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
           <select
             value={valor}
             onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
+            className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all"
             required={filtro.obrigatorio}
           >
-            <option value="">Selecione...</option>
+            <option value="" className="bg-slate-900">Selecione...</option>
             {filtro.opcoes?.map((opcao, idx) => (
-              <option key={idx} value={opcao}>
+              <option key={idx} value={opcao} className="bg-slate-900">
                 {opcao}
               </option>
             ))}
@@ -245,7 +245,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
             type="text"
             value={valor}
             onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
+            className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all"
             placeholder={filtro.valor_padrao || ''}
             required={filtro.obrigatorio}
           />
@@ -255,10 +255,15 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-          <p className="text-slate-400">Carregando relatório...</p>
+      <div className="h-full flex items-center justify-center p-12">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+            </div>
+          </div>
+          <p className="text-slate-400 font-medium tracking-wide">Carregando relatório...</p>
         </div>
       </div>
     )
@@ -287,23 +292,26 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
       <div className="p-6 border-b border-slate-700/50 bg-slate-800/30 min-w-0">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-4">
+              <div className="p-2 bg-purple-500/10 rounded-xl">
+                <Play className="w-5 h-5 text-purple-400 fill-current" />
+              </div>
               {relatorio.nome}
               <button
                 onClick={toggleFavorito}
-                className="focus:outline-none transition-transform active:scale-95"
+                className="focus:outline-none transition-all hover:scale-110 active:scale-90"
                 title={isFavorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
               >
                 <Star
-                  className={`w-6 h-6 transition-colors ${isFavorito
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : 'text-slate-500 hover:text-yellow-400'
+                  className={`w-6 h-6 transition-all ${isFavorito
+                    ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]'
+                    : 'text-slate-600 hover:text-yellow-400'
                     }`}
                 />
               </button>
             </h2>
             {relatorio.descricao && (
-              <p className="text-slate-400 mt-1">{relatorio.descricao}</p>
+              <p className="text-slate-400 mt-2 text-sm leading-relaxed max-w-2xl">{relatorio.descricao}</p>
             )}
           </div>
           <button
@@ -338,7 +346,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
               <button
                 onClick={handleExecutar}
                 disabled={executando}
-                className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
+                className="flex items-center gap-3 px-8 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-xl transition-all font-bold shadow-lg shadow-purple-900/20 active:scale-95"
               >
                 {executando ? (
                   <>
@@ -347,7 +355,7 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
                   </>
                 ) : (
                   <>
-                    <Play className="w-5 h-5" />
+                    <Play className="w-5 h-5 fill-current" />
                     Executar Relatório
                   </>
                 )}

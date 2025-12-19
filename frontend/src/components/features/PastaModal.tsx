@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import api from '@/services/api'
 import type { PastaNode } from './FolderTree'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/useToast'
 
 interface PastaModalProps {
   isOpen: boolean
@@ -13,20 +21,19 @@ interface PastaModalProps {
 
 export function PastaModal({ isOpen, onClose, onSuccess, pastaAtual, pastaPai }: PastaModalProps) {
   const [nome, setNome] = useState('')
-  const [cor, setCor] = useState('#6366f1')
+  const [cor, setCor] = useState('#a855f7')
   const [loading, setLoading] = useState(false)
-  const [erro, setErro] = useState('')
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (isOpen) {
       if (pastaAtual) {
         setNome(pastaAtual.nome)
-        setCor('#6366f1') // A API pode não retornar cor, então usamos padrão
+        setCor('#a855f7')
       } else {
         setNome('')
-        setCor('#6366f1')
+        setCor('#a855f7')
       }
-      setErro('')
     }
   }, [isOpen, pastaAtual])
 
@@ -34,12 +41,11 @@ export function PastaModal({ isOpen, onClose, onSuccess, pastaAtual, pastaPai }:
     e.preventDefault()
 
     if (!nome.trim()) {
-      setErro('Nome da pasta é obrigatório')
+      showToast('Nome da pasta é obrigatório', 'error')
       return
     }
 
     setLoading(true)
-    setErro('')
 
     try {
       const dados = {
@@ -59,7 +65,7 @@ export function PastaModal({ isOpen, onClose, onSuccess, pastaAtual, pastaPai }:
       onClose()
     } catch (error: any) {
       console.error('Erro ao salvar pasta:', error)
-      setErro(error.response?.data?.detail || 'Erro ao salvar pasta')
+      showToast(error.response?.data?.detail || 'Erro ao salvar pasta', 'error')
     } finally {
       setLoading(false)
     }
@@ -68,88 +74,79 @@ export function PastaModal({ isOpen, onClose, onSuccess, pastaAtual, pastaPai }:
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 border border-slate-700">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-white">
             {pastaAtual ? 'Editar Pasta' : 'Nova Pasta'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-slate-400" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {/* Nome */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Nome da Pasta
-              </label>
-              <input
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex: Relatórios Mensais"
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-primary-500 focus:outline-none transition-colors"
-                disabled={loading}
-                autoFocus
-              />
-            </div>
-
-            {/* Cor (opcional, pode ser implementado depois) */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Cor (opcional)
-              </label>
-              <div className="flex gap-2">
-                {['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'].map((colorOption) => (
-                  <button
-                    key={colorOption}
-                    type="button"
-                    onClick={() => setCor(colorOption)}
-                    className={`w-10 h-10 rounded-lg transition-all ${
-                      cor === colorOption ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''
-                    }`}
-                    style={{ backgroundColor: colorOption }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Erro */}
-            {erro && (
-              <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-                <p className="text-sm text-red-400">{erro}</p>
-              </div>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-6 py-2">
+          <div>
+            <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">
+              Nome da Pasta
+            </label>
+            <input
+              type="text"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex: Relatórios de Vendas"
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl text-white placeholder-slate-600 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 focus:outline-none transition-all"
+              disabled={loading}
+              autoFocus
+            />
           </div>
 
-          {/* Botões */}
+          <div>
+            <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
+              Cor de Identificação
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              {['#a855f7', '#8b5cf6', '#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'].map((colorOption) => (
+                <button
+                  key={colorOption}
+                  type="button"
+                  onClick={() => setCor(colorOption)}
+                  className={`w-10 h-10 rounded-xl transition-all relative group ${cor === colorOption ? 'ring-2 ring-white ring-offset-4 ring-offset-slate-900 scale-110 shadow-lg' : 'hover:scale-105 opacity-70 hover:opacity-100'
+                    }`}
+                  style={{ backgroundColor: colorOption }}
+                >
+                  {cor === colorOption && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex gap-3 mt-6">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50"
+              className="flex-1 text-slate-400 hover:text-white"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50"
+              className="flex-1 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/20"
             >
-              {loading ? 'Salvando...' : pastaAtual ? 'Salvar' : 'Criar'}
-            </button>
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Salvando...
+                </span>
+              ) : pastaAtual ? 'Salvar Alterações' : 'Criar Pasta'}
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

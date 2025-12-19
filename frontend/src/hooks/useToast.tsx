@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -68,7 +68,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             case 'warning':
                 return 'bg-yellow-500/10 border-yellow-500/50 text-yellow-400'
             case 'info':
-                return 'bg-blue-500/10 border-blue-500/50 text-blue-400'
+                return 'bg-purple-500/10 border-purple-500/50 text-purple-400'
         }
     }
 

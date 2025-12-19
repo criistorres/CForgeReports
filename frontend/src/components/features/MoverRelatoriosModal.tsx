@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
-import { X, Folder, ChevronRight, ChevronDown } from 'lucide-react'
+import { Folder, ChevronRight, ChevronDown } from 'lucide-react'
 import type { PastaNode } from '@/components/features/FolderTree'
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface MoverRelatoriosModalProps {
     isOpen: boolean
@@ -61,10 +68,12 @@ export function MoverRelatoriosModal({
             <div key={pasta.id}>
                 <div
                     className={`
-            flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors
-            ${selecionada ? 'bg-primary-600 text-white' : 'hover:bg-slate-700/50 text-slate-300'}
-            ${desabilitada ? 'opacity-50 cursor-not-allowed' : ''}
-          `}
+                        flex items-center gap-2 p-2 rounded-xl cursor-pointer transition-all border group
+                        ${selecionada
+                            ? 'bg-purple-500/20 border-purple-500/30 text-purple-300'
+                            : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-slate-200'}
+                        ${desabilitada ? 'opacity-40 cursor-not-allowed' : ''}
+                    `}
                     style={{ paddingLeft: `${nivel * 20 + 8}px` }}
                     onClick={() => !desabilitada && setPastaDestino(pasta.id)}
                 >
@@ -74,25 +83,30 @@ export function MoverRelatoriosModal({
                                 e.stopPropagation()
                                 toggleExpansao(pasta.id)
                             }}
-                            className="p-0.5 hover:bg-slate-600 rounded"
+                            className="p-1 hover:bg-white/10 rounded-md transition-colors"
                         >
                             {expandida ? (
-                                <ChevronDown className="w-4 h-4" />
+                                <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300" />
                             ) : (
-                                <ChevronRight className="w-4 h-4" />
+                                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300" />
                             )}
                         </button>
                     )}
                     {!temSubpastas && <div className="w-5" />}
-                    <Folder className="w-4 h-4" />
-                    <span className="flex-1 text-sm">{pasta.nome}</span>
+                    <div className={`p-1 rounded-lg transition-colors ${selecionada ? 'text-purple-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
+                        <Folder className="w-4 h-4" />
+                    </div>
+                    <span className={`flex-1 text-sm ${selecionada ? 'font-bold' : 'font-medium'}`}>{pasta.nome}</span>
                     {desabilitada && (
-                        <span className="text-xs bg-slate-700 px-2 py-0.5 rounded">Atual</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-slate-700/50 text-slate-500 px-2 py-0.5 rounded-full border border-white/5">Atual</span>
+                    )}
+                    {selecionada && !desabilitada && (
+                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
                     )}
                 </div>
 
                 {temSubpastas && expandida && (
-                    <div>
+                    <div className="mt-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
                         {pasta.subpastas!.map(subpasta => renderPasta(subpasta, nivel + 1))}
                     </div>
                 )}
@@ -101,82 +115,68 @@ export function MoverRelatoriosModal({
     }
 
     return (
-        <>
-            {/* Overlay */}
-            <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in"
-                onClick={onClose}
-            />
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle className="text-xl font-bold text-white">
+                        Mover Relatórios
+                    </DialogTitle>
+                    <p className="text-sm text-slate-400 mt-1">
+                        Selecione a pasta de destino para {quantidadeRelatorios} relatório(s)
+                    </p>
+                </DialogHeader>
 
-            {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div
-                    className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg animate-fade-in-up"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-slate-700">
-                        <div>
-                            <h2 className="text-xl font-bold text-white">
-                                Mover Relatórios
-                            </h2>
-                            <p className="text-sm text-slate-400 mt-1">
-                                Selecione a pasta de destino para {quantidadeRelatorios} relatório(s)
-                            </p>
+                <div className="py-4">
+                    {/* Opção: Raiz (sem pasta) */}
+                    <div
+                        className={`
+                            flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all mb-4 border
+                            ${pastaDestino === null
+                                ? 'bg-purple-500/20 border-purple-500/40 text-purple-300 shadow-lg shadow-purple-900/10'
+                                : 'hover:bg-white/5 border-transparent text-slate-300'}
+                        `}
+                        onClick={() => setPastaDestino(null)}
+                    >
+                        <div className={`p-1.5 rounded-lg ${pastaDestino === null ? 'bg-purple-500/20' : 'bg-slate-800'}`}>
+                            <Folder className={`w-4 h-4 ${pastaDestino === null ? 'text-purple-400' : 'text-slate-500'}`} />
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    {/* Body */}
-                    <div className="p-6">
-                        {/* Opção: Raiz (sem pasta) */}
-                        <div
-                            className={`
-                flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors mb-3
-                ${pastaDestino === null ? 'bg-primary-600 text-white' : 'hover:bg-slate-700/50 text-slate-300'}
-              `}
-                            onClick={() => setPastaDestino(null)}
-                        >
-                            <Folder className="w-4 h-4" />
-                            <span className="font-medium">📁 Raiz (Sem pasta)</span>
-                        </div>
-
-                        {/* Árvore de pastas */}
-                        <div className="max-h-96 overflow-y-auto custom-scrollbar space-y-1">
-                            {pastas.map(pasta => renderPasta(pasta))}
-                        </div>
-
-                        {pastas.length === 0 && (
-                            <div className="text-center py-8 text-slate-400">
-                                <Folder className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                <p>Nenhuma pasta disponível</p>
-                            </div>
+                        <span className="font-semibold text-sm">Raiz (Nível Principal)</span>
+                        {pastaDestino === null && (
+                            <div className="ml-auto w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
                         )}
                     </div>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-700">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleConfirmar}
-                            className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Mover {quantidadeRelatorios} relatório(s)
-                        </button>
+                    {/* Árvore de pastas */}
+                    <div className="max-h-[300px] overflow-y-auto premium-scrollbar pr-2 space-y-1">
+                        {pastas.map(pasta => renderPasta(pasta))}
+
+                        {pastas.length === 0 && (
+                            <div className="text-center py-12 bg-white/5 rounded-2xl border border-white/5">
+                                <Folder className="w-12 h-12 mx-auto mb-3 text-slate-600 opacity-20" />
+                                <p className="text-slate-500 text-sm">Nenhuma pasta criada</p>
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div>
-        </>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-3 mt-4">
+                    <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        className="text-slate-400 hover:text-white"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleConfirmar}
+                        className="bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/20"
+                    >
+                        Mover {quantidadeRelatorios} relatório(s)
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     )
 }
 

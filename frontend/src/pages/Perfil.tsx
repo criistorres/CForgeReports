@@ -25,11 +25,11 @@ export default function Perfil() {
   const getAvatarColor = (name: string) => {
     const colors = [
       'from-purple-500 to-pink-500',
-      'from-blue-500 to-cyan-500',
-      'from-green-500 to-emerald-500',
-      'from-orange-500 to-red-500',
+      'from-violet-500 to-indigo-500',
+      'from-fuchsia-500 to-purple-500',
+      'from-purple-600 to-violet-600',
       'from-indigo-500 to-purple-500',
-      'from-teal-500 to-green-500',
+      'from-violet-400 to-purple-400',
     ]
     const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     return colors[hash % colors.length]
@@ -45,8 +45,8 @@ export default function Perfil() {
       },
       TECNICO: {
         label: 'Técnico',
-        color: 'text-blue-300',
-        bg: 'bg-blue-500/20 border-blue-500/30'
+        color: 'text-purple-300',
+        bg: 'bg-purple-500/20 border-purple-500/30'
       },
       USUARIO: {
         label: 'Usuário',
@@ -142,13 +142,13 @@ export default function Perfil() {
                 <User className="w-5 h-5 text-primary-400" />
                 Informações Pessoais
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700/30">
                   <p className="text-xs text-slate-500 mb-1">Nome Completo</p>
                   <p className="text-sm font-medium text-white">{user.nome}</p>
                 </div>
-                
+
                 <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700/30">
                   <p className="text-xs text-slate-500 mb-1">ID do Usuário</p>
                   <p className="text-sm font-medium text-white font-mono">{user.id}</p>
@@ -162,7 +162,7 @@ export default function Perfil() {
                 <Key className="w-5 h-5 text-primary-400" />
                 Segurança
               </h3>
-              
+
               <div className="space-y-3">
                 <button
                   onClick={() => {

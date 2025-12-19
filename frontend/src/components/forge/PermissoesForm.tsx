@@ -4,7 +4,8 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Alert, AlertDescription } from '../ui/alert'
-import { InfoIcon, Trash2Icon, PlusIcon } from 'lucide-react'
+import { InfoIcon, Trash2Icon, PlusIcon, Loader2 } from 'lucide-react'
+import { useToast } from '@/hooks/useToast'
 
 interface Permissao {
   id: string
@@ -32,7 +33,7 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
   const [novoNivel, setNovoNivel] = useState<'VISUALIZAR' | 'EXPORTAR'>('VISUALIZAR')
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [erro, setErro] = useState('')
+  const { showToast } = useToast()
 
   useEffect(() => {
     carregarDados()
@@ -48,7 +49,7 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
       setPermissoes(permRes.data)
       setUsuarios(usersRes.data.filter((u: Usuario) => u.role === 'USUARIO'))
     } catch (err) {
-      setErro('Erro ao carregar permissões')
+      showToast('Erro ao carregar permissões', 'error')
       console.error(err)
     } finally {
       setLoading(false)
@@ -60,7 +61,6 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
 
     try {
       setSalvando(true)
-      setErro('')
       await api.post(`/relatorios/${relatorioId}/permissoes/`, {
         usuario_id: novoUsuarioId,
         nivel: novoNivel
@@ -69,7 +69,7 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
       setNovoUsuarioId('')
       setNovoNivel('VISUALIZAR')
     } catch (err) {
-      setErro('Erro ao adicionar permissão')
+      showToast('Erro ao adicionar permissão', 'error')
       console.error(err)
     } finally {
       setSalvando(false)
@@ -81,13 +81,12 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
 
     try {
       setSalvando(true)
-      setErro('')
       await api.delete(`/relatorios/${relatorioId}/permissoes/`, {
         data: { usuario_id: usuarioId }
       })
       setPermissoes(permissoes.filter(p => p.usuario_id !== usuarioId))
     } catch (err) {
-      setErro('Erro ao remover permissão')
+      showToast('Erro ao remover permissão', 'error')
       console.error(err)
     } finally {
       setSalvando(false)
@@ -101,7 +100,8 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-8">
+      <div className="flex flex-col items-center justify-center p-12 gap-3">
+        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
         <div className="text-slate-400">Carregando permissões...</div>
       </div>
     )
@@ -109,7 +109,7 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
 
   return (
     <div className="space-y-6">
-      <Alert className="bg-blue-950/30 border-blue-800">
+      <Alert className="bg-purple-900/10 border-purple-500/20 text-purple-400">
         <InfoIcon className="h-4 w-4" />
         <AlertDescription className="text-slate-300">
           Admin e Técnico sempre têm acesso total aos relatórios.
@@ -117,11 +117,7 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
         </AlertDescription>
       </Alert>
 
-      {erro && (
-        <Alert className="bg-red-950/30 border-red-800">
-          <AlertDescription className="text-red-300">{erro}</AlertDescription>
-        </Alert>
-      )}
+
 
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
@@ -197,11 +193,12 @@ export default function PermissoesForm({ relatorioId }: PermissoesFormProps) {
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge
-                      className={
-                        p.nivel === 'EXPORTAR'
-                          ? 'bg-green-600 hover:bg-green-700'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }
+                      className={`
+                        ${p.nivel === 'EXPORTAR'
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                          : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                        }
+                      `}
                     >
                       {p.nivel}
                     </Badge>

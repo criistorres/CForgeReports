@@ -69,14 +69,14 @@ function RelatorioItem({ relatorio, nivel, isSelected, onSelect, isAdmin }: Rela
       className={`
         flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-all group/item
         ${isSelected
-          ? 'bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+          ? 'bg-purple-500/15 border border-purple-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]'
           : 'hover:bg-white/5 border border-transparent hover:border-white/5'
         }
       `}
       style={{ paddingLeft: `${24 + nivel * 12}px` }}
       onClick={() => onSelect(relatorio.id)}
     >
-      <FileText className={`w-3.5 h-3.5 transition-colors ${isSelected ? 'text-blue-400' : 'text-slate-500 group-hover/item:text-slate-300'}`} />
+      <FileText className={`w-3.5 h-3.5 transition-colors ${isSelected ? 'text-purple-400' : 'text-slate-500 group-hover/item:text-slate-300'}`} />
 
       <span className={`flex-1 text-[13px] truncate transition-colors ${isSelected ? 'text-white font-medium' : 'text-slate-400 group-hover/item:text-slate-200'}`}>
         {relatorio.nome}

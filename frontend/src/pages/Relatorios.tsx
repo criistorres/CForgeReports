@@ -50,7 +50,7 @@ export default function Relatorios() {
   async function loadFavoritos() {
     try {
       const response = await api.get('/favoritos/')
-      const favIds = new Set(response.data.map((f: any) => f.relatorio_id))
+      const favIds = new Set<string>(response.data.map((f: any) => f.relatorio_id as string))
       setFavoritos(favIds)
     } catch (err) {
       console.error('Erro ao carregar favoritos:', err)
@@ -75,7 +75,7 @@ export default function Relatorios() {
         <div className="p-6">
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
               <p className="text-slate-400">Carregando relatórios...</p>
             </div>
           </div>
@@ -91,14 +91,14 @@ export default function Relatorios() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <FileText className="w-6 h-6 text-primary-400" />
+              <FileText className="w-6 h-6 text-purple-400" />
               Relatórios
             </h1>
             <p className="text-slate-400 mt-1">Gerencie seus relatórios SQL</p>
           </div>
           <Link
             to="/relatorios/novo"
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
             Novo Relatório
@@ -113,7 +113,7 @@ export default function Relatorios() {
             placeholder="Buscar relatórios por nome ou descrição..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-800/50 text-white rounded-lg border border-slate-700 focus:border-primary-500 focus:outline-none transition-colors"
+            className="w-full pl-11 pr-4 py-3 bg-slate-800/50 text-white rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors"
           />
         </div>
 
@@ -123,7 +123,7 @@ export default function Relatorios() {
             <EmptyState
               icon={FileText}
               title="Nenhum relatório encontrado"
-              description={busca 
+              description={busca
                 ? `Não encontramos relatórios que correspondam a "${busca}". Tente buscar com outros termos.`
                 : "Comece criando seu primeiro relatório SQL. Você poderá conectar a bancos de dados e criar consultas personalizadas."
               }
@@ -138,7 +138,7 @@ export default function Relatorios() {
             {relatorios.map(rel => (
               <div
                 key={rel.id}
-                className="bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/30 p-5 rounded-xl flex justify-between items-start transition-all"
+                className="bg-slate-800/50 border border-slate-700/50 hover:border-purple-500/30 p-5 rounded-xl flex justify-between items-start transition-all"
               >
                 <div className="flex items-start gap-4 flex-1">
                   <FavoritoButton

@@ -18,6 +18,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useToast } from '@/hooks/useToast';
 
 const STATUS_LABELS: Record<UserStatus, { label: string; variant: string; color: string }> = {
     ativo: { label: 'Ativo', variant: 'success', color: 'text-green-500' },
@@ -42,6 +43,7 @@ export function DetalheUsuario() {
     const [showRedefinirSenhaDialog, setShowRedefinirSenhaDialog] = useState(false);
     const [novaSenha, setNovaSenha] = useState('');
     const [confirmarSenha, setConfirmarSenha] = useState('');
+    const { showToast } = useToast();
     const [formData, setFormData] = useState<UpdateUsuarioData>({
         nome: '',
         role: 'USUARIO'
@@ -72,11 +74,11 @@ export function DetalheUsuario() {
         try {
             setSaving(true);
             await usuarioService.update(id!, formData);
-            alert('Usuário atualizado com sucesso!');
+            showToast('Usuário atualizado com sucesso!', 'success');
             loadUsuario();
         } catch (error: any) {
             const message = error.response?.data?.role?.[0] || 'Erro ao atualizar usuário';
-            alert(message);
+            showToast(message, 'error');
         } finally {
             setSaving(false);
         }
@@ -85,45 +87,45 @@ export function DetalheUsuario() {
     const handleDesativar = async () => {
         try {
             await usuarioService.desativar(id!);
-            alert('Usuário desativado com sucesso!');
+            showToast('Usuário desativado com sucesso!', 'success');
             navigate('/usuarios');
         } catch (error: any) {
             const message = error.response?.data?.detail || 'Erro ao desativar usuário';
-            alert(message);
+            showToast(message, 'error');
         }
     };
 
     const handleReativar = async () => {
         try {
             await usuarioService.reativar(id!);
-            alert('Usuário reativado com sucesso!');
+            showToast('Usuário reativado com sucesso!', 'success');
             loadUsuario();
         } catch (error: any) {
             const message = error.response?.data?.detail || 'Erro ao reativar usuário';
-            alert(message);
+            showToast(message, 'error');
         }
     };
 
     const handleRedefinirSenha = async () => {
         if (novaSenha.length < 6) {
-            alert('A senha deve ter pelo menos 6 caracteres');
+            showToast('A senha deve ter pelo menos 6 caracteres', 'warning');
             return;
         }
 
         if (novaSenha !== confirmarSenha) {
-            alert('As senhas não coincidem');
+            showToast('As senhas não coincidem', 'warning');
             return;
         }
 
         try {
             await usuarioService.redefinirSenha(id!, novaSenha);
-            alert('Senha redefinida com sucesso!');
+            showToast('Senha redefinida com sucesso!', 'success');
             setShowRedefinirSenhaDialog(false);
             setNovaSenha('');
             setConfirmarSenha('');
         } catch (error: any) {
             const message = error.response?.data?.detail || 'Erro ao redefinir senha';
-            alert(message);
+            showToast(message, 'error');
         }
     };
 
@@ -132,7 +134,7 @@ export function DetalheUsuario() {
             <AppLayout>
                 <div className="flex items-center justify-center h-screen">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
                         <p className="text-slate-400">Carregando detalhes...</p>
                     </div>
                 </div>
@@ -170,7 +172,7 @@ export function DetalheUsuario() {
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
                             <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                                <User className="w-5 h-5 text-primary-400" />
+                                <User className="w-5 h-5 text-purple-400" />
                                 Informações Pessoais
                             </h2>
 
@@ -183,7 +185,7 @@ export function DetalheUsuario() {
                                             id="nome"
                                             value={formData.nome}
                                             onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                                            className="pl-10 bg-slate-900/50 border-slate-700 text-white focus:border-primary-500"
+                                            className="pl-10 bg-slate-900/50 border-slate-700 text-white focus:border-purple-500"
                                         />
                                     </div>
                                 </div>
@@ -212,7 +214,7 @@ export function DetalheUsuario() {
                                             id="role"
                                             value={formData.role}
                                             onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                                            className="w-full bg-slate-900/50 border border-slate-700 rounded-md py-2 pl-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
+                                            className="w-full bg-slate-900/50 border border-slate-700 rounded-md py-2 pl-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
                                         >
                                             <option value="ADMIN">Administrador (Acesso total)</option>
                                             <option value="TECNICO">Técnico (Gerencia conexões)</option>
@@ -226,7 +228,7 @@ export function DetalheUsuario() {
                                 <Button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="bg-primary-600 hover:bg-primary-500 text-white min-w-[150px]"
+                                    className="bg-purple-600 hover:bg-purple-500 text-white min-w-[150px] shadow-lg shadow-purple-900/20"
                                 >
                                     {saving ? (
                                         <>Salvando...</>
@@ -404,7 +406,7 @@ export function DetalheUsuario() {
                                     type="password"
                                     value={novaSenha}
                                     onChange={(e) => setNovaSenha(e.target.value)}
-                                    className="bg-slate-900/50 border-slate-700 text-white focus:border-primary-500 mt-2"
+                                    className="bg-slate-900/50 border-slate-700 text-white focus:border-purple-500 mt-2"
                                     placeholder="Mínimo de 6 caracteres"
                                 />
                             </div>
@@ -416,7 +418,7 @@ export function DetalheUsuario() {
                                     type="password"
                                     value={confirmarSenha}
                                     onChange={(e) => setConfirmarSenha(e.target.value)}
-                                    className="bg-slate-900/50 border-slate-700 text-white focus:border-primary-500 mt-2"
+                                    className="bg-slate-900/50 border-slate-700 text-white focus:border-purple-500 mt-2"
                                     placeholder="Digite a senha novamente"
                                 />
                             </div>
@@ -435,7 +437,7 @@ export function DetalheUsuario() {
                             </AlertDialogCancel>
                             <AlertDialogAction
                                 onClick={handleRedefinirSenha}
-                                className="bg-primary-600 hover:bg-primary-500 text-white border-0"
+                                className="bg-purple-600 hover:bg-purple-500 text-white border-0 shadow-lg shadow-purple-900/20"
                                 disabled={novaSenha.length < 6 || novaSenha !== confirmarSenha}
                             >
                                 Salvar Nova Senha

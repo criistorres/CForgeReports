@@ -157,7 +157,7 @@ export default function ExecutarRelatorio() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl transition-all disabled:opacity-50 font-bold active:scale-95 shadow-lg shadow-purple-900/20"
             >
               {loading ? 'Executando...' : 'Executar Relatório'}
             </button>
@@ -166,7 +166,7 @@ export default function ExecutarRelatorio() {
                 type="button"
                 onClick={exportar}
                 disabled={exportando}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+                className="bg-slate-700 hover:bg-purple-600 text-white px-6 py-2 rounded-xl transition-all disabled:opacity-50 border border-white/5 active:scale-95"
               >
                 {exportando ? 'Exportando...' : 'Exportar Excel'}
               </button>
@@ -178,7 +178,7 @@ export default function ExecutarRelatorio() {
           <button
             onClick={executar}
             disabled={loading}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl transition-all disabled:opacity-50 font-bold active:scale-95 shadow-lg shadow-purple-900/20"
           >
             {loading ? 'Executando...' : 'Executar Relatório'}
           </button>
@@ -186,7 +186,7 @@ export default function ExecutarRelatorio() {
             <button
               onClick={exportar}
               disabled={exportando}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition disabled:opacity-50"
+              className="bg-slate-700 hover:bg-purple-600 text-white px-6 py-2 rounded-xl transition-all disabled:opacity-50 border border-white/5 active:scale-95"
             >
               {exportando ? 'Exportando...' : 'Exportar Excel'}
             </button>
