@@ -2,8 +2,54 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils.text import slugify
 from django.utils import timezone
-from .models import Usuario
+from .models import Usuario, Cargo, Departamento
 from apps.empresas.models import Empresa
+
+
+class CargoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cargo
+        fields = ['id', 'nome']
+
+    def validate(self, attrs):
+        nome = attrs.get('nome')
+        request = self.context.get('request')
+        if not request:
+            return attrs
+            
+        empresa = request.user.empresa
+        qs = Cargo.objects.filter(empresa=empresa, nome__iexact=nome)
+        
+        if self.instance:
+            qs = qs.exclude(id=self.instance.id)
+            
+        if qs.exists():
+            raise serializers.ValidationError({'nome': 'Já existe um cargo com este nome nesta empresa.'})
+            
+        return attrs
+
+
+class DepartamentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Departamento
+        fields = ['id', 'nome']
+
+    def validate(self, attrs):
+        nome = attrs.get('nome')
+        request = self.context.get('request')
+        if not request:
+            return attrs
+            
+        empresa = request.user.empresa
+        qs = Departamento.objects.filter(empresa=empresa, nome__iexact=nome)
+        
+        if self.instance:
+            qs = qs.exclude(id=self.instance.id)
+            
+        if qs.exists():
+            raise serializers.ValidationError({'nome': 'Já existe um departamento com este nome nesta empresa.'})
+            
+        return attrs
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -43,6 +89,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': user.role,
                 'empresa_id': str(user.empresa_id) if user.empresa_id else None,
                 'empresa_nome': user.empresa.nome if user.empresa else None,
+                'telefone': user.telefone,
+                'cargo_nome': user.cargo.nome if user.cargo else None,
+                'departamento_nome': user.departamento.nome if user.departamento else None,
             }
         }
 
@@ -122,9 +171,13 @@ class UsuarioListSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = [
             'id', 'nome', 'email', 'role', 'ativo', 
-            'status', 'ativado_em', 'criado_em'
+            'status', 'ativado_em', 'criado_em',
+            'telefone', 'cargo_nome', 'departamento_nome'
         ]
         read_only_fields = ['id', 'ativado_em', 'criado_em']
+
+    cargo_nome = serializers.CharField(source='cargo.nome', read_only=True)
+    departamento_nome = serializers.CharField(source='departamento.nome', read_only=True)
 
 
 class UsuarioCreateSerializer(serializers.ModelSerializer):
@@ -132,7 +185,7 @@ class UsuarioCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Usuario
-        fields = ['nome', 'email', 'role']
+        fields = ['nome', 'email', 'role', 'telefone', 'cargo', 'departamento']
     
     def validate_email(self, value):
         """Valida email único na empresa (RN01) - mas como email é unique global, já valida"""
@@ -199,7 +252,7 @@ class UsuarioUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Usuario
-        fields = ['nome', 'role']
+        fields = ['nome', 'role', 'telefone', 'cargo', 'departamento']
     
     def validate(self, attrs):
         """Valida regras de negócio"""
@@ -230,6 +283,7 @@ class UsuarioDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'nome', 'email', 'role', 'ativo', 'status',
             'ativado_em', 'criado_em', 'atualizado_em',
-            'criado_por_nome'
+            'criado_por_nome', 'telefone', 'cargo', 'departamento'
         ]
+        depth = 1  # Para trazer detalhes do cargo e departamento no detalhe
         read_only_fields = ['id', 'email', 'ativado_em', 'criado_em', 'atualizado_em']

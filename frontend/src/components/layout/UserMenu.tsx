@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { LogOut, User, Settings, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { PerfilDrawer } from './PerfilDrawer'
+import { ModalAlterarSenha } from '@/components/usuarios/ModalAlterarSenha'
 
 export function UserMenu() {
   const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Fechar menu ao clicar fora
@@ -188,7 +190,17 @@ export function UserMenu() {
       )}
 
       {/* Perfil Drawer */}
-      <PerfilDrawer isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      <PerfilDrawer
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onOpenPasswordModal={() => setIsPasswordModalOpen(true)}
+      />
+
+      {/* Modal de Alterar Senha */}
+      <ModalAlterarSenha
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </div>
   )
 }

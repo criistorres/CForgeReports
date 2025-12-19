@@ -1,5 +1,5 @@
 import api from './api';
-import type { Usuario, CreateUsuarioData, UpdateUsuarioData } from '@/types/usuario';
+import type { Usuario, CreateUsuarioData, UpdateUsuarioData, Cargo, Departamento } from '@/types/usuario';
 
 export const usuarioService = {
     async list(): Promise<Usuario[]> {
@@ -38,5 +38,35 @@ export const usuarioService = {
 
     async redefinirSenha(id: string, senha: string): Promise<void> {
         await api.post(`/usuarios/${id}/redefinir_senha/`, { senha });
+    },
+
+    // Cargos
+    async listCargos(): Promise<Cargo[]> {
+        const response = await api.get('/usuarios/cargos/');
+        return response.data;
+    },
+
+    async createCargo(nome: string): Promise<Cargo> {
+        const response = await api.post('/usuarios/cargos/', { nome });
+        return response.data;
+    },
+
+    async deleteCargo(id: string): Promise<void> {
+        await api.delete(`/usuarios/cargos/${id}/`);
+    },
+
+    // Departamentos
+    async listDepartamentos(): Promise<Departamento[]> {
+        const response = await api.get('/usuarios/departamentos/');
+        return response.data;
+    },
+
+    async createDepartamento(nome: string): Promise<Departamento> {
+        const response = await api.post('/usuarios/departamentos/', { nome });
+        return response.data;
+    },
+
+    async deleteDepartamento(id: string): Promise<void> {
+        await api.delete(`/usuarios/departamentos/${id}/`);
     }
 };

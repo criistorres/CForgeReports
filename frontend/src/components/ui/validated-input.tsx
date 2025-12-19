@@ -6,6 +6,7 @@ interface ValidatedInputProps extends React.InputHTMLAttributes<HTMLInputElement
   error?: string
   validate?: (value: string) => string | null
   showValidation?: boolean
+  icon?: React.ReactNode
 }
 
 export function ValidatedInput({
@@ -16,6 +17,7 @@ export function ValidatedInput({
   value,
   onChange,
   className = '',
+  icon,
   ...props
 }: ValidatedInputProps) {
   const [internalError, setInternalError] = useState<string | null>(null)
@@ -57,6 +59,11 @@ export function ValidatedInput({
         {props.required && <span className="text-red-400 ml-1">*</span>}
       </label>
       <div className="relative">
+        {icon && (
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+            {icon}
+          </div>
+        )}
         <input
           {...props}
           value={value}
@@ -64,6 +71,7 @@ export function ValidatedInput({
           onBlur={handleBlur}
           className={`
             w-full px-4 py-3 rounded-lg border transition-colors
+            ${icon ? 'pl-11' : ''}
             ${hasError
               ? 'bg-red-500/10 border-red-500/50 text-white focus:border-red-500 focus:ring-red-500/20'
               : shouldShowValidation && isValid

@@ -5,6 +5,46 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.utils import timezone
 
 
+class Cargo(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    empresa = models.ForeignKey(
+        'empresas.Empresa',
+        on_delete=models.CASCADE,
+        related_name='cargos'
+    )
+    nome = models.CharField(max_length=100)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'cargos'
+        verbose_name = 'Cargo'
+        verbose_name_plural = 'Cargos'
+        unique_together = ['empresa', 'nome']
+
+    def __str__(self):
+        return f"{self.nome} ({self.empresa.nome})"
+
+
+class Departamento(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    empresa = models.ForeignKey(
+        'empresas.Empresa',
+        on_delete=models.CASCADE,
+        related_name='departamentos'
+    )
+    nome = models.CharField(max_length=100)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'departamentos'
+        verbose_name = 'Departamento'
+        verbose_name_plural = 'Departamentos'
+        unique_together = ['empresa', 'nome']
+
+    def __str__(self):
+        return f"{self.nome} ({self.empresa.nome})"
+
+
 class UsuarioManager(BaseUserManager):
     def create_user(self, email, empresa, password=None, **extra_fields):
         if not email:
@@ -58,6 +98,23 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     nome = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.USUARIO)
+
+    # Novos campos corporativos
+    telefone = models.CharField(max_length=20, blank=True, null=True)
+    cargo = models.ForeignKey(
+        Cargo,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios'
+    )
+    departamento = models.ForeignKey(
+        Departamento,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios'
+    )
     
     # Status e Ativação
     ativo = models.BooleanField(default=False)

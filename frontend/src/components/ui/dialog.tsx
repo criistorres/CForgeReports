@@ -1,5 +1,6 @@
 import * as React from "react"
 import { useEffect } from "react"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 
 const Dialog = ({ open, onOpenChange, children }: { open?: boolean; onOpenChange?: (open: boolean) => void; children: React.ReactNode }) => {
@@ -14,22 +15,29 @@ const Dialog = ({ open, onOpenChange, children }: { open?: boolean; onOpenChange
         }
         if (open) {
             document.addEventListener('keydown', handleEscape)
-            // Prevenir scroll do body quando modal está aberto
+            document.body.dataset.dialogsOpen = String(Number(document.body.dataset.dialogsOpen || 0) + 1)
             document.body.style.overflow = 'hidden'
         }
         return () => {
             document.removeEventListener('keydown', handleEscape)
-            document.body.style.overflow = 'unset'
+            const openCount = Number(document.body.dataset.dialogsOpen || 0) - 1
+            document.body.dataset.dialogsOpen = String(Math.max(0, openCount))
+            if (openCount <= 0) {
+                document.body.style.overflow = ''
+            }
         }
     }, [open, onOpenChange])
 
-    return (
+    const dialogContent = (
         <div
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300"
+            className="fixed inset-0 z-[10000] flex items-center justify-center animate-in fade-in duration-300"
             onClick={() => onOpenChange && onOpenChange(false)}
         >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+
             <div
-                className="bg-slate-900/90 border border-white/10 text-white rounded-2xl shadow-2xl w-full max-w-lg relative animate-in zoom-in-95 duration-300 overflow-hidden"
+                className="bg-slate-900/90 border border-white/10 text-white rounded-2xl shadow-2xl w-[calc(100%-2rem)] max-w-lg relative animate-in zoom-in-95 duration-300 overflow-hidden z-10"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Gradient Accent */}
@@ -46,6 +54,8 @@ const Dialog = ({ open, onOpenChange, children }: { open?: boolean; onOpenChange
             </div>
         </div>
     )
+
+    return createPortal(dialogContent, document.body)
 }
 
 const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, children, ...props }, ref) => (

@@ -30,13 +30,17 @@ export function Drawer({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
-      // Prevenir scroll do body quando drawer está aberto
+      document.body.dataset.dialogsOpen = String(Number(document.body.dataset.dialogsOpen || 0) + 1)
       document.body.style.overflow = 'hidden'
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = ''
+      const openCount = Number(document.body.dataset.dialogsOpen || 0) - 1
+      document.body.dataset.dialogsOpen = String(Math.max(0, openCount))
+      if (openCount <= 0) {
+        document.body.style.overflow = ''
+      }
     }
   }, [isOpen, onClose])
 
@@ -56,8 +60,8 @@ export function Drawer({
         className={cn(
           'fixed top-0 bottom-0 z-[9999] w-full max-w-md bg-slate-900 border-l border-slate-700/50 shadow-2xl',
           'flex flex-col',
-          side === 'right' 
-            ? 'right-0 animate-slide-in-from-right' 
+          side === 'right'
+            ? 'right-0 animate-slide-in-from-right'
             : 'left-0 animate-slide-in-from-left',
           className
         )}

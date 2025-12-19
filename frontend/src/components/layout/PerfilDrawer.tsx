@@ -1,14 +1,14 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { Drawer } from '@/components/ui/Drawer'
-import { User, Mail, Shield, Building2, Edit, Key, Globe } from 'lucide-react'
+import { User, Mail, Shield, Building2, Edit, Key, Globe, Phone, Briefcase } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-
 interface PerfilDrawerProps {
   isOpen: boolean
   onClose: () => void
+  onOpenPasswordModal: () => void
 }
 
-export function PerfilDrawer({ isOpen, onClose }: PerfilDrawerProps) {
+export function PerfilDrawer({ isOpen, onClose, onOpenPasswordModal }: PerfilDrawerProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -70,24 +70,24 @@ export function PerfilDrawer({ isOpen, onClose }: PerfilDrawerProps) {
           <div className="flex flex-col items-center text-center mb-6">
             {/* Avatar Grande */}
             <div className={`
-              w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(user.nome)}
-              flex items-center justify-center text-white text-2xl font-bold
-              shadow-xl ring-4 ring-slate-700/50 mb-4
-            `}>
+            w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(user.nome)}
+            flex items-center justify-center text-white text-2xl font-bold
+            shadow-xl ring-4 ring-slate-700/50 mb-4
+          `}>
               {getInitials(user.nome)}
             </div>
 
             <h2 className="text-xl font-bold text-white mb-2">{user.nome}</h2>
             <span className={`
-              inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border
-              ${roleInfo.bg} ${roleInfo.color}
-            `}>
+            inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border
+            ${roleInfo.bg} ${roleInfo.color}
+          `}>
               <Shield className="w-3 h-3 mr-1.5" />
               {roleInfo.label}
             </span>
           </div>
 
-          {/* Informações de Contato */}
+          {/* Informações de Contato e Profissionais */}
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700/30">
               <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0">
@@ -101,11 +101,33 @@ export function PerfilDrawer({ isOpen, onClose }: PerfilDrawerProps) {
 
             <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700/30">
               <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0">
+                <Phone className="w-5 h-5 text-slate-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-slate-500 mb-1">Telefone</p>
+                <p className="text-sm font-medium text-white truncate">{user.telefone || 'Não informado'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700/30">
+              <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="w-5 h-5 text-slate-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-slate-500 mb-1">Cargo</p>
+                <p className="text-sm font-medium text-white truncate">{user.cargo_nome || 'Não informado'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700/30">
+              <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0">
                 <Building2 className="w-5 h-5 text-slate-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-slate-500 mb-1">Empresa</p>
-                <p className="text-sm font-medium text-white truncate">{user.empresa_nome || 'Não informado'}</p>
+                <p className="text-xs text-slate-500 mb-1">Empresa {user.departamento_nome ? '/ Depto' : ''}</p>
+                <p className="text-sm font-medium text-white truncate">
+                  {user.empresa_nome} {user.departamento_nome ? `(${user.departamento_nome})` : ''}
+                </p>
               </div>
             </div>
           </div>
@@ -140,8 +162,8 @@ export function PerfilDrawer({ isOpen, onClose }: PerfilDrawerProps) {
 
           <button
             onClick={() => {
-              // TODO: Implementar alteração de senha
-              console.log('Alterar senha')
+              onClose()
+              onOpenPasswordModal()
             }}
             className="w-full flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700/30 hover:border-primary-500/50 hover:bg-slate-900/70 transition-all group"
           >
@@ -268,4 +290,5 @@ export function PerfilDrawer({ isOpen, onClose }: PerfilDrawerProps) {
     </Drawer>
   )
 }
+
 

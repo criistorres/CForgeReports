@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usuarioService } from '@/services/usuarioService';
-import type { Usuario, UpdateUsuarioData, UserRole, UserStatus } from '@/types/usuario';
+import type { Usuario, UpdateUsuarioData, UserRole, UserStatus, Cargo, Departamento } from '@/types/usuario';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Ban, CheckCircle, User, Mail, Shield, Calendar, Clock, Copy, AlertTriangle, Key } from 'lucide-react';
+import { ArrowLeft, Save, Ban, CheckCircle, User, Mail, Shield, Calendar, Copy, AlertTriangle, Key, Phone, Briefcase, Building2 } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,12 +26,6 @@ const STATUS_LABELS: Record<UserStatus, { label: string; variant: string; color:
     inativo: { label: 'Inativo', variant: 'secondary', color: 'text-slate-500' }
 };
 
-const ROLE_LABELS: Record<UserRole, string> = {
-    ADMIN: 'Administrador',
-    TECNICO: 'Técnico',
-    USUARIO: 'Usuário'
-};
-
 export function DetalheUsuario() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -43,10 +37,15 @@ export function DetalheUsuario() {
     const [showRedefinirSenhaDialog, setShowRedefinirSenhaDialog] = useState(false);
     const [novaSenha, setNovaSenha] = useState('');
     const [confirmarSenha, setConfirmarSenha] = useState('');
+    const [cargos, setCargos] = useState<Cargo[]>([]);
+    const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
     const { showToast } = useToast();
     const [formData, setFormData] = useState<UpdateUsuarioData>({
         nome: '',
-        role: 'USUARIO'
+        role: 'USUARIO',
+        telefone: '',
+        cargo: '',
+        departamento: ''
     });
 
     useEffect(() => {
@@ -56,14 +55,23 @@ export function DetalheUsuario() {
     const loadUsuario = async () => {
         try {
             setLoading(true);
-            const data = await usuarioService.get(id!);
+            const [data, c, d] = await Promise.all([
+                usuarioService.get(id!),
+                usuarioService.listCargos(),
+                usuarioService.listDepartamentos()
+            ]);
             setUsuario(data);
+            setCargos(c);
+            setDepartamentos(d);
             setFormData({
                 nome: data.nome,
-                role: data.role
+                role: data.role,
+                telefone: data.telefone || '',
+                cargo: data.cargo?.id || '',
+                departamento: data.departamento?.id || ''
             });
         } catch (error) {
-            console.error('Erro ao carregar usuário:', error);
+            console.error('Erro ao carregar dados do usuário:', error);
             navigate('/usuarios');
         } finally {
             setLoading(false);
@@ -207,19 +215,74 @@ export function DetalheUsuario() {
                                     </p>
                                 </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="role" className="text-slate-300">Perfil de Acesso</Label>
-                                    <div className="relative">
-                                        <select
-                                            id="role"
-                                            value={formData.role}
-                                            onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                                            className="w-full bg-slate-900/50 border border-slate-700 rounded-md py-2 pl-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
-                                        >
-                                            <option value="ADMIN">Administrador (Acesso total)</option>
-                                            <option value="TECNICO">Técnico (Gerencia conexões)</option>
-                                            <option value="USUARIO">Usuário (Visualiza relatórios)</option>
-                                        </select>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="role" className="text-slate-300">Perfil de Acesso</Label>
+                                        <div className="relative">
+                                            <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                            <select
+                                                id="role"
+                                                value={formData.role}
+                                                onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                                                className="w-full bg-slate-900/50 border border-slate-700 rounded-md py-2 pl-10 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                                            >
+                                                <option value="ADMIN">Administrador (Acesso total)</option>
+                                                <option value="TECNICO">Técnico (Gerencia conexões)</option>
+                                                <option value="USUARIO">Usuário (Visualiza relatórios)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="telefone" className="text-slate-300">Telefone / WhatsApp</Label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                            <Input
+                                                id="telefone"
+                                                value={formData.telefone}
+                                                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                                                className="pl-10 bg-slate-900/50 border-slate-700 text-white focus:border-purple-500"
+                                                placeholder="(00) 00000-0000"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="departamento" className="text-slate-300">Departamento</Label>
+                                        <div className="relative">
+                                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                            <select
+                                                id="departamento"
+                                                value={formData.departamento}
+                                                onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
+                                                className="w-full bg-slate-900/50 border border-slate-700 rounded-md py-2 pl-10 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                                            >
+                                                <option value="">Selecionar...</option>
+                                                {departamentos.map(d => (
+                                                    <option key={d.id} value={d.id}>{d.nome}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="cargo" className="text-slate-300">Cargo</Label>
+                                        <div className="relative">
+                                            <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                            <select
+                                                id="cargo"
+                                                value={formData.cargo}
+                                                onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                                                className="w-full bg-slate-900/50 border border-slate-700 rounded-md py-2 pl-10 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                                            >
+                                                <option value="">Selecionar...</option>
+                                                {cargos.map(c => (
+                                                    <option key={c.id} value={c.id}>{c.nome}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -334,6 +397,30 @@ export function DetalheUsuario() {
                                                     day: '2-digit', month: 'long', year: 'numeric'
                                                 })}
                                             </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {usuario.cargo && (
+                                    <div className="flex items-start gap-3">
+                                        <div className="bg-slate-700/50 p-2 rounded-lg">
+                                            <Briefcase className="w-4 h-4 text-slate-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400">Cargo</p>
+                                            <p className="text-white text-sm">{usuario.cargo.nome}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {usuario.departamento && (
+                                    <div className="flex items-start gap-3">
+                                        <div className="bg-slate-700/50 p-2 rounded-lg">
+                                            <Building2 className="w-4 h-4 text-slate-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400">Departamento</p>
+                                            <p className="text-white text-sm">{usuario.departamento.nome}</p>
                                         </div>
                                     </div>
                                 )}

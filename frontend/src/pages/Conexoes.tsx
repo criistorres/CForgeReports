@@ -1,11 +1,26 @@
-import { useState, useEffect } from 'react'
-import { Plus, Database, Server, Play, Edit, Trash2, Check, X, AlertCircle, Save, Loader2 } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import {
+  Plus,
+  Database,
+  Server,
+  Trash2,
+  X,
+  Save,
+  Loader2,
+  ChevronRight,
+  Terminal,
+  Lock,
+  Globe,
+  Activity,
+  Search
+} from 'lucide-react'
 import api from '@/services/api'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import { getConnectionErrorMessage } from '@/utils/errorMessages'
 import { ValidatedInput } from '@/components/ui/validated-input'
+import { Button } from '@/components/ui/button'
 
 interface Conexao {
   id: string
@@ -31,11 +46,33 @@ interface ConexaoFormData {
   senha: string
 }
 
+const DB_THEMES: Record<string, { color: string; icon: string; label: string; glow: string }> = {
+  'POSTGRESQL': {
+    color: 'text-indigo-400',
+    glow: 'shadow-indigo-500/20',
+    icon: 'Elephant', // Usaremos Database com cor específica
+    label: 'PostgreSQL'
+  },
+  'SQLSERVER': {
+    color: 'text-red-400',
+    glow: 'shadow-red-500/20',
+    icon: 'Database',
+    label: 'SQL Server'
+  },
+  'MYSQL': {
+    color: 'text-amber-400',
+    glow: 'shadow-amber-500/20',
+    icon: 'Database',
+    label: 'MySQL'
+  }
+}
+
 export default function Conexoes() {
   const [conexoes, setConexoes] = useState<Conexao[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [busca, setBusca] = useState('')
   const [formData, setFormData] = useState<ConexaoFormData>({
     nome: '',
     tipo: 'POSTGRESQL',
@@ -61,7 +98,6 @@ export default function Conexoes() {
 
   const validateHost = (value: string) => {
     if (!value.trim()) return 'Host é obrigatório'
-    // Validação básica de hostname/IP
     const hostPattern = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$|^(\d{1,3}\.){3}\d{1,3}$|^localhost$/
     if (!hostPattern.test(value) && value !== 'localhost') {
       return 'Host inválido. Use um hostname válido, IP ou localhost'
@@ -78,7 +114,6 @@ export default function Conexoes() {
 
   const validateDatabase = (value: string) => {
     if (!value.trim()) return 'Database é obrigatório'
-    if (value.length < 1) return 'Database é obrigatório'
     return null
   }
 
@@ -109,7 +144,8 @@ export default function Conexoes() {
     }
   }
 
-  async function testarConexao(id: string) {
+  async function testarConexao(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
     setTestandoId(id)
     try {
       const response = await api.post(`/conexoes/${id}/testar-existente/`)
@@ -127,7 +163,8 @@ export default function Conexoes() {
     }
   }
 
-  async function deletarConexao(id: string, nome: string) {
+  async function deletarConexao(id: string, nome: string, e: React.MouseEvent) {
+    e.stopPropagation()
     const confirmed = await confirm({
       title: 'Excluir Conexão',
       description: `Tem certeza que deseja excluir a conexão "${nome}"? Esta ação não pode ser desfeita.`,
@@ -162,6 +199,7 @@ export default function Conexoes() {
     setErrors({})
     setEditingId(null)
     setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function handleEditarConexao(conexao: Conexao) {
@@ -177,6 +215,7 @@ export default function Conexoes() {
     setErrors({})
     setEditingId(conexao.id)
     setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function handleTipoChange(tipo: string) {
@@ -208,7 +247,6 @@ export default function Conexoes() {
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
 
-    // Validação antes de enviar
     const validationErrors: Record<string, string> = {}
     const nomeError = validateNome(formData.nome)
     const hostError = validateHost(formData.host)
@@ -231,8 +269,6 @@ export default function Conexoes() {
     }
 
     setSalvando(true)
-    setErrors({})
-
     try {
       if (editingId) {
         await api.put(`/conexoes/${editingId}/`, formData)
@@ -246,16 +282,12 @@ export default function Conexoes() {
     } catch (err: any) {
       const mensagem = getConnectionErrorMessage(err)
       showToast(mensagem, 'error')
-
-      // Se houver erros de validação do backend, mostrar nos campos
       if (err.response?.data) {
         const backendErrors: Record<string, string> = {}
         Object.keys(err.response.data).forEach(key => {
-          if (Array.isArray(err.response.data[key])) {
-            backendErrors[key] = err.response.data[key][0]
-          } else {
-            backendErrors[key] = err.response.data[key]
-          }
+          backendErrors[key] = Array.isArray(err.response.data[key])
+            ? err.response.data[key][0]
+            : err.response.data[key]
         })
         setErrors(backendErrors)
       }
@@ -264,23 +296,25 @@ export default function Conexoes() {
     }
   }
 
-  function getTipoBadge(tipo: string) {
-    const badges: { [key: string]: { color: string; icon: string } } = {
-      'POSTGRESQL': { color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30', icon: '🐘' },
-      'SQLSERVER': { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: '🔷' },
-      'MYSQL': { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: '🐬' }
-    }
-    return badges[tipo] || { color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', icon: '💾' }
-  }
+  const filteredConexoes = useMemo(() => {
+    return conexoes.filter(c =>
+      c.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      c.database.toLowerCase().includes(busca.toLowerCase()) ||
+      c.host.toLowerCase().includes(busca.toLowerCase())
+    )
+  }, [conexoes, busca])
 
   if (loading) {
     return (
       <AppLayout>
-        <div className="p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-slate-400">Carregando conexões...</p>
+        <div className="p-8">
+          <div className="flex items-center justify-center h-[60vh]">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-16 h-16">
+                <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full" />
+                <div className="absolute inset-0 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+              <p className="text-slate-400 font-medium animate-pulse">Sincronizando bancos de dados...</p>
             </div>
           </div>
         </div>
@@ -290,309 +324,331 @@ export default function Conexoes() {
 
   return (
     <AppLayout>
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+      <div className="p-8 max-w-7xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Database className="w-6 h-6 text-purple-400" />
-              Conexões de Banco
-            </h1>
-            <p className="text-slate-400 mt-1">Gerencie suas conexões de banco de dados</p>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2 bg-purple-500/10 rounded-xl">
+                <Database className="w-6 h-6 text-purple-400" />
+              </div>
+              <h1 className="text-3xl font-black text-white tracking-tight">
+                Conexões de Banco
+              </h1>
+            </div>
+            <p className="text-slate-400">Gerencie as fontes de dados para seus relatórios</p>
           </div>
-          <button
-            onClick={handleNovaConexao}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Nova Conexão
-          </button>
+          {!showForm && (
+            <Button
+              onClick={handleNovaConexao}
+              className="bg-purple-600 hover:bg-purple-500 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-purple-500/20 transition-all active:scale-95 border-0"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              NOVA CONEXÃO
+            </Button>
+          )}
         </div>
 
-        {/* Formulário */}
+        {/* Formulário Moderno */}
         {showForm && (
-          <div className="bg-slate-800/50 border border-slate-700/50 p-6 rounded-xl mb-6">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Server className="w-5 h-5 text-purple-400" />
-              {editingId ? 'Editar Conexão' : 'Nova Conexão'}
-            </h2>
+          <div className="bg-slate-900/60 border border-white/10 rounded-3xl p-8 backdrop-blur-md shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Server size={180} />
+            </div>
 
-            <form onSubmit={handleSalvar} className="space-y-5">
-              <div className="grid grid-cols-2 gap-5">
-                <ValidatedInput
-                  label="Nome da Conexão"
-                  value={formData.nome}
-                  onChange={(e) => {
-                    setFormData({ ...formData, nome: e.target.value })
-                    setErrors({ ...errors, nome: '' })
-                  }}
-                  validate={validateNome}
-                  error={errors.nome}
-                  placeholder="Ex: Produção, Desenvolvimento..."
-                  required
-                />
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Tipo de Banco *
-                  </label>
-                  <select
-                    value={formData.tipo}
-                    onChange={(e) => handleTipoChange(e.target.value)}
-                    className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-700 focus:border-purple-500 focus:outline-none transition-colors"
-                    required
-                  >
-                    <option value="POSTGRESQL">🐘 PostgreSQL</option>
-                    <option value="SQLSERVER">🔷 SQL Server</option>
-                    <option value="MYSQL">🐬 MySQL</option>
-                  </select>
-                </div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-xl font-black text-white flex items-center gap-3">
+                  <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                    <Plus className="w-5 h-5 text-purple-400" />
+                  </div>
+                  {editingId ? 'EDITAR CONEXÃO' : 'NOVA CONEXÃO'}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowForm(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
               </div>
 
-              <div className="grid grid-cols-4 gap-5">
-                <div className="col-span-2">
+              <form onSubmit={handleSalvar} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <ValidatedInput
-                    label="Host"
-                    type="text"
-                    value={formData.host}
+                    label="Nome de Identificação"
+                    value={formData.nome}
                     onChange={(e) => {
-                      setFormData({ ...formData, host: e.target.value })
-                      setErrors({ ...errors, host: '' })
+                      setFormData({ ...formData, nome: e.target.value })
+                      setErrors({ ...errors, nome: '' })
                     }}
-                    validate={validateHost}
-                    error={errors.host}
-                    placeholder="localhost ou IP do servidor"
+                    validate={validateNome}
+                    error={errors.nome}
+                    placeholder="Ex: Banco de Produção, Analytics..."
                     required
+                    className="bg-slate-950/40 border-white/5"
+                  />
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">
+                      Motor do Banco
+                    </label>
+                    <select
+                      value={formData.tipo}
+                      onChange={(e) => handleTipoChange(e.target.value)}
+                      className="w-full h-11 bg-slate-950/40 text-white px-4 rounded-xl border border-white/5 focus:border-purple-500 focus:outline-none transition-all"
+                      required
+                    >
+                      <option value="POSTGRESQL">PostgreSQL</option>
+                      <option value="SQLSERVER">Microsoft SQL Server</option>
+                      <option value="MYSQL">MySQL / MariaDB</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+                  <div className="sm:col-span-2">
+                    <ValidatedInput
+                      label="Endpoint / Host"
+                      value={formData.host}
+                      onChange={(e) => {
+                        setFormData({ ...formData, host: e.target.value })
+                        setErrors({ ...errors, host: '' })
+                      }}
+                      validate={validateHost}
+                      error={errors.host}
+                      placeholder="ex: db.empresa.com.br ou 10.0.0.1"
+                      required
+                      className="bg-slate-950/40 border-white/5"
+                    />
+                  </div>
+                  <ValidatedInput
+                    label="Porta"
+                    type="number"
+                    value={formData.porta.toString()}
+                    onChange={(e) => {
+                      const porta = parseInt(e.target.value) || 0
+                      setFormData({ ...formData, porta })
+                      setErrors({ ...errors, porta: '' })
+                    }}
+                    validate={validatePorta}
+                    error={errors.porta}
+                    required
+                    className="bg-slate-950/40 border-white/5"
+                  />
+                  <ValidatedInput
+                    label="Nome do Banco"
+                    value={formData.database}
+                    onChange={(e) => {
+                      setFormData({ ...formData, database: e.target.value })
+                      setErrors({ ...errors, database: '' })
+                    }}
+                    validate={validateDatabase}
+                    error={errors.database}
+                    placeholder="database_name"
+                    required
+                    className="bg-slate-950/40 border-white/5"
                   />
                 </div>
-                <ValidatedInput
-                  label="Porta"
-                  type="number"
-                  value={formData.porta.toString()}
-                  onChange={(e) => {
-                    const porta = parseInt(e.target.value) || 0
-                    setFormData({ ...formData, porta })
-                    setErrors({ ...errors, porta: '' })
-                  }}
-                  validate={validatePorta}
-                  error={errors.porta}
-                  required
-                />
-                <ValidatedInput
-                  label="Database"
-                  type="text"
-                  value={formData.database}
-                  onChange={(e) => {
-                    setFormData({ ...formData, database: e.target.value })
-                    setErrors({ ...errors, database: '' })
-                  }}
-                  validate={validateDatabase}
-                  error={errors.database}
-                  placeholder="Nome do banco"
-                  required
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-5">
-                <ValidatedInput
-                  label="Usuário"
-                  type="text"
-                  value={formData.usuario}
-                  onChange={(e) => {
-                    setFormData({ ...formData, usuario: e.target.value })
-                    setErrors({ ...errors, usuario: '' })
-                  }}
-                  validate={validateUsuario}
-                  error={errors.usuario}
-                  placeholder="Usuário do banco"
-                  required
-                />
-                <ValidatedInput
-                  label={`Senha ${editingId ? '(deixe em branco para manter)' : ''}`}
-                  type="password"
-                  value={formData.senha}
-                  onChange={(e) => {
-                    setFormData({ ...formData, senha: e.target.value })
-                    setErrors({ ...errors, senha: '' })
-                  }}
-                  validate={validateSenha}
-                  error={errors.senha}
-                  placeholder="••••••••"
-                  required={!editingId}
-                />
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <ValidatedInput
+                    label="Usuário"
+                    icon={<Terminal className="w-3.5 h-3.5" />}
+                    value={formData.usuario}
+                    onChange={(e) => {
+                      setFormData({ ...formData, usuario: e.target.value })
+                      setErrors({ ...errors, usuario: '' })
+                    }}
+                    validate={validateUsuario}
+                    error={errors.usuario}
+                    placeholder="admin_user"
+                    required
+                    className="bg-slate-950/40 border-white/5"
+                  />
+                  <ValidatedInput
+                    label={`Credencial Secret ${editingId ? '(deixe em branco para manter)' : ''}`}
+                    icon={<Lock className="w-3.5 h-3.5" />}
+                    type="password"
+                    value={formData.senha}
+                    onChange={(e) => {
+                      setFormData({ ...formData, senha: e.target.value })
+                      setErrors({ ...errors, senha: '' })
+                    }}
+                    validate={validateSenha}
+                    error={errors.senha}
+                    placeholder="••••••••"
+                    required={!editingId}
+                    className="bg-slate-950/40 border-white/5"
+                  />
+                </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleTestarFormulario}
-                  disabled={testando}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-purple-500/20 hover:bg-purple-500 text-purple-400 hover:text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-purple-500/30"
-                >
-                  {testando ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Testando...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4" />
-                      Testar Conexão
-                    </>
-                  )}
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  {salvando ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Salvar
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+                <div className="flex flex-wrap gap-4 pt-4 border-t border-white/5">
+                  <Button
+                    type="button"
+                    onClick={handleTestarFormulario}
+                    disabled={testando}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold h-11 px-6 rounded-xl border border-white/5 shadow-inner"
+                  >
+                    {testando ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Activity className="w-4 h-4 mr-2" />
+                    )}
+                    TESTAR CONEXÃO
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={salvando}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-emerald-500/20 flex-1 sm:flex-none border-0"
+                  >
+                    {salvando ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {editingId ? 'ATUALIZAR' : 'CRIAR CONEXÃO'}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    variant="ghost"
+                    className="text-slate-500 hover:text-white h-11 px-6"
+                  >
+                    CANCELAR
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
-        {/* Lista de Conexões */}
-        {conexoes.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="w-16 h-16 rounded-full bg-slate-700/50 flex items-center justify-center mb-4">
-                <Database className="w-8 h-8 text-slate-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Nenhuma conexão cadastrada</h3>
-              <p className="text-sm text-slate-400 max-w-md mb-6">
-                Comece adicionando sua primeira conexão de banco de dados para criar relatórios
-              </p>
-              <button
-                onClick={handleNovaConexao}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Nova Conexão
-              </button>
+        {/* Search and List */}
+        {!showForm && (
+          <div className="space-y-6">
+            <div className="relative group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-purple-400 transition-colors" />
+              <input
+                type="text"
+                placeholder="Pesquisar por nome, host ou banco..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="w-full pl-14 pr-6 py-4 bg-slate-900/40 text-white rounded-2xl border border-white/5 focus:border-purple-500/50 focus:outline-none transition-all backdrop-blur-sm shadow-inner placeholder:text-slate-600"
+              />
             </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {conexoes.map((conexao) => {
-              const badge = getTipoBadge(conexao.tipo)
-              return (
-                <div
-                  key={conexao.id}
-                  className="bg-slate-800/50 border border-slate-700/50 hover:border-purple-500/30 p-5 rounded-xl flex justify-between items-center transition-all"
-                >
-                  <div className="flex items-center gap-4 flex-1">
-                    {/* Ícone de status */}
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${conexao.ultimo_teste_ok === true
-                      ? 'bg-green-500/20'
-                      : conexao.ultimo_teste_ok === false
-                        ? 'bg-red-500/20'
-                        : 'bg-slate-700/50'
-                      }`}>
-                      {conexao.ultimo_teste_ok === true && <Check className="w-5 h-5 text-green-400" />}
-                      {conexao.ultimo_teste_ok === false && <X className="w-5 h-5 text-red-400" />}
-                      {conexao.ultimo_teste_ok === null && <AlertCircle className="w-5 h-5 text-slate-400" />}
-                    </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-white font-semibold text-lg">{conexao.nome}</h3>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${badge.color}`}>
-                          {badge.icon} {conexao.tipo}
-                        </span>
-                      </div>
-                      <div className="flex gap-4 mt-1.5 text-sm text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Server className="w-3 h-3" />
-                          {conexao.host}:{conexao.porta}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Database className="w-3 h-3" />
-                          {conexao.database}
-                        </span>
-                        <span>
-                          👤 {conexao.usuario}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status badge */}
-                  <div className="mx-4">
-                    {conexao.ultimo_teste_ok === true && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
-                        ✓ Conectado
-                      </span>
-                    )}
-                    {conexao.ultimo_teste_ok === false && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
-                        ✗ Erro
-                      </span>
-                    )}
-                    {conexao.ultimo_teste_ok === null && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-500/20 text-slate-400 border border-slate-500/30">
-                        Não testado
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Ações */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => testarConexao(conexao.id)}
-                      disabled={testandoId === conexao.id}
-                      className="flex items-center gap-2 px-3 py-2 bg-purple-500/20 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors text-sm"
-                      title="Testar conexão"
-                    >
-                      {testandoId === conexao.id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Testando...
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4" />
-                          Testar
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleEditarConexao(conexao)}
-                      className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
-                      title="Editar conexão"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => deletarConexao(conexao.id, conexao.nome)}
-                      className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg transition-colors text-sm"
-                      title="Deletar conexão"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+            {filteredConexoes.length === 0 ? (
+              <div className="bg-slate-900/40 border border-white/5 rounded-3xl p-20 text-center backdrop-blur-sm">
+                <div className="w-20 h-20 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5">
+                  <Database className="w-10 h-10 text-slate-600" />
                 </div>
-              )
-            })}
+                <h3 className="text-xl font-black text-white mb-2">
+                  {busca ? 'Nenhuma conexão encontrada' : 'Comece a conectar seus bancos'}
+                </h3>
+                <p className="text-slate-500 max-w-sm mx-auto mb-8">
+                  {busca ? 'Ajuste sua busca para encontrar o que precisa.' : 'Adicione sua primeira fonte de dados para começar a gerar relatórios dinâmicos.'}
+                </p>
+                {!busca && (
+                  <Button
+                    onClick={handleNovaConexao}
+                    className="bg-purple-600 hover:bg-purple-500 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-purple-500/20 border-0"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    NOVA CONEXÃO
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredConexoes.map((conexao) => {
+                  const theme = DB_THEMES[conexao.tipo] || DB_THEMES.POSTGRESQL
+                  const statusColor = conexao.ultimo_teste_ok === true
+                    ? 'bg-emerald-500 shadow-emerald-500/40'
+                    : conexao.ultimo_teste_ok === false
+                      ? 'bg-rose-500 shadow-rose-500/40'
+                      : 'bg-slate-600'
+
+                  return (
+                    <div
+                      key={conexao.id}
+                      onClick={() => handleEditarConexao(conexao)}
+                      className="group relative bg-slate-900/40 border border-white/5 hover:border-purple-500/30 p-6 rounded-3xl transition-all cursor-pointer backdrop-blur-sm shadow-xl"
+                    >
+                      {/* Status Indicator */}
+                      <div className="absolute top-6 right-6 flex items-center gap-2">
+                        <div className={`w-2.5 h-2.5 rounded-full ${statusColor} shadow-[0_0_12px_rgba(0,0,0,0.5)]`} />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          {conexao.ultimo_teste_ok === true ? 'Online' : conexao.ultimo_teste_ok === false ? 'Error' : 'Pending'}
+                        </span>
+                      </div>
+
+                      {/* DB Icon & Type */}
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className={`w-12 h-12 rounded-2xl bg-slate-950/50 flex items-center justify-center border border-white/5 shadow-inner transition-transform group-hover:scale-110 ${theme.color}`}>
+                          <Database size={24} />
+                        </div>
+                        <div>
+                          <h3 className="text-white font-black text-lg truncate pr-16">{conexao.nome}</h3>
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${theme.color}`}>
+                            {theme.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* connection info */}
+                      <div className="space-y-4 mb-8">
+                        <div className="flex items-center gap-3 text-slate-400 group-hover:text-slate-300 transition-colors">
+                          <Globe className="w-4 h-4 text-slate-600" />
+                          <span className="text-sm font-medium truncate">{conexao.host}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-slate-400 group-hover:text-slate-300 transition-colors">
+                          <Database className="w-4 h-4 text-slate-600" />
+                          <span className="text-sm font-medium">{conexao.database}</span>
+                        </div>
+                      </div>
+
+                      {/* Actions Section */}
+                      <div className="flex items-center justify-between pt-5 border-t border-white/5">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => testarConexao(conexao.id, e)}
+                            disabled={testandoId === conexao.id}
+                            className={`h-9 px-3 rounded-lg text-xs font-black uppercase tracking-wider ${conexao.ultimo_teste_ok === true
+                              ? 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'
+                              : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'
+                              }`}
+                          >
+                            {testandoId === conexao.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <>
+                                <Activity className="w-3.5 h-3.5 mr-1.5" />
+                                TESTAR
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => deletarConexao(conexao.id, conexao.nome, e)}
+                            className="h-9 w-9 p-0 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400">
+                            <ChevronRight className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

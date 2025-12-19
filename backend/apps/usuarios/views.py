@@ -4,16 +4,18 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
-from .models import Usuario
+from .models import Usuario, Cargo, Departamento
 from .serializers import (
     CustomTokenObtainPairSerializer, 
     RegistroPublicoSerializer, 
-    UsuarioListSerializer, 
-    UsuarioCreateSerializer, 
+    UsuarioListSerializer,
+    UsuarioCreateSerializer,
     UsuarioUpdateSerializer, 
-    UsuarioDetailSerializer
+    UsuarioDetailSerializer,
+    CargoSerializer,
+    DepartamentoSerializer
 )
-from .permissions import IsAdmin, CannotDeactivateSelf, MustKeepOneAdmin
+from .permissions import IsAdmin, IsAdminOrSelf, CannotDeactivateSelf, MustKeepOneAdmin
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -54,7 +56,19 @@ class RegistroPublicoView(views.APIView):
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciamento de usuários"""
-    permission_classes = [IsAuthenticated, IsAdmin, CannotDeactivateSelf, MustKeepOneAdmin]
+    permission_classes = [IsAuthenticated, IsAdminOrSelf, CannotDeactivateSelf, MustKeepOneAdmin]
+    
+    def get_permissions(self):
+        # Ações que qualquer um logado pode fazer em SI MESMO (ou apenas ver info básica)
+        if self.action in ['me', 'alterar_senha']:
+            return [IsAuthenticated()]
+            
+        # Para listar usuários, criar ou desativar, precisa ser Admin
+        if self.action in ['list', 'create', 'desativar', 'reativar', 'reenviar_convite', 'redefinir_senha']:
+            return [IsAuthenticated(), IsAdmin()]
+            
+        # Para update, edit e retrieve, usamos IsAdminOrSelf (definido no permission_classes base)
+        return [p() for p in self.permission_classes]
     
     def get_queryset(self):
         """Retorna apenas usuários da empresa do admin"""
@@ -161,3 +175,53 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             {'detail': 'Senha redefinida com sucesso'},
             status=status.HTTP_200_OK
         )
+
+    @action(detail=False, methods=['post'])
+    def alterar_senha(self, request):
+        """Altera a senha do próprio usuário logado"""
+        user = request.user
+        senha_atual = request.data.get('senha_atual')
+        nova_senha = request.data.get('nova_senha')
+
+        if not user.check_password(senha_atual):
+            return Response(
+                {'detail': 'Senha atual incorreta'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not nova_senha or len(nova_senha) < 6:
+            return Response(
+                {'detail': 'A nova senha deve ter pelo menos 6 caracteres'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(nova_senha)
+        user.save()
+
+        return Response(
+            {'detail': 'Senha alterada com sucesso'},
+            status=status.HTTP_200_OK
+        )
+
+class CargoViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de cargos"""
+    permission_classes = [IsAuthenticated, IsAdmin]
+    serializer_class = CargoSerializer
+
+    def get_queryset(self):
+        return Cargo.objects.filter(empresa=self.request.user.empresa)
+
+    def perform_create(self, serializer):
+        serializer.save(empresa=self.request.user.empresa)
+
+
+class DepartamentoViewSet(viewsets.ModelViewSet):
+    """ViewSet para gerenciamento de departamentos"""
+    permission_classes = [IsAuthenticated, IsAdmin]
+    serializer_class = DepartamentoSerializer
+
+    def get_queryset(self):
+        return Departamento.objects.filter(empresa=self.request.user.empresa)
+
+    def perform_create(self, serializer):
+        serializer.save(empresa=self.request.user.empresa)

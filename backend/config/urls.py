@@ -9,7 +9,7 @@ urlpatterns = [
     path('api/auth/registrar/', RegistroPublicoView.as_view(), name='registro_publico'),
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/', include('apps.usuarios.urls')),
+    path('api/usuarios/', include('apps.usuarios.urls')),
     path('api/', include('apps.conexoes.urls')),
     path('api/', include('apps.relatorios.urls')),
     path('api/', include('apps.execucoes.urls')),

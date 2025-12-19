@@ -1,11 +1,14 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { User, Mail, Shield, Building2, Edit, Key, Globe } from 'lucide-react'
+import { User, Mail, Shield, Building2, Edit, Key, Globe, Phone, Briefcase } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { ModalAlterarSenha } from '@/components/usuarios/ModalAlterarSenha'
 
 export default function Perfil() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 
   if (!user) {
     return null
@@ -98,37 +101,50 @@ export default function Perfil() {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        // TODO: Implementar edição de perfil
-                        console.log('Editar perfil')
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all border border-slate-700/50"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span className="hidden sm:inline">Editar</span>
-                    </button>
                   </div>
 
-                  {/* Informações de Contato */}
-                  <div className="space-y-3">
+                  {/* Informações de Contato e Profissionais */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 text-slate-300">
-                      <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center shrink-0">
                         <Mail className="w-5 h-5 text-slate-400" />
                       </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Email</p>
-                        <p className="text-sm font-medium">{user.email}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-500 truncate">Email</p>
+                        <p className="text-sm font-medium truncate">{user.email}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 text-slate-300">
-                      <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center shrink-0">
+                        <Phone className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-500 truncate">Telefone</p>
+                        <p className="text-sm font-medium truncate">{user.telefone || 'Não informado'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center shrink-0">
+                        <Briefcase className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-500 truncate">Cargo</p>
+                        <p className="text-sm font-medium truncate">{user.cargo_nome || 'Não informado'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center shrink-0">
                         <Building2 className="w-5 h-5 text-slate-400" />
                       </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Empresa</p>
-                        <p className="text-sm font-medium">{user.empresa_nome || 'Não informado'}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-500 truncate">Departamento / Empresa</p>
+                        <p className="text-sm font-medium truncate">
+                          {user.departamento_nome ? `${user.departamento_nome} - ` : ''}
+                          {user.empresa_nome || 'Não informado'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -166,8 +182,7 @@ export default function Perfil() {
               <div className="space-y-3">
                 <button
                   onClick={() => {
-                    // TODO: Implementar alteração de senha
-                    console.log('Alterar senha')
+                    setIsPasswordModalOpen(true)
                   }}
                   className="w-full flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700/30 hover:border-primary-500/50 hover:bg-slate-900/70 transition-all group"
                 >
@@ -288,6 +303,11 @@ export default function Perfil() {
           </div>
         </div>
       </div>
+      {/* Modal de Alterar Senha */}
+      <ModalAlterarSenha
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </AppLayout>
   )
 }

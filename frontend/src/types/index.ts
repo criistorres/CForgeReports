@@ -6,6 +6,9 @@ export interface Usuario {
   role: 'ADMIN' | 'TECNICO' | 'USUARIO';
   empresa_id: string;
   empresa_nome: string;
+  telefone?: string;
+  cargo_nome?: string;
+  departamento_nome?: string;
 }
 
 export interface Empresa {
