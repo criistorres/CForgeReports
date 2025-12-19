@@ -58,10 +58,10 @@ export function UserMenu() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+          flex items-center gap-3 px-2 py-1.5 rounded-2xl transition-all duration-300
           ${isOpen
-            ? 'bg-slate-800/80 border border-slate-700/50'
-            : 'hover:bg-slate-800/60 border border-transparent'
+            ? 'bg-white/10 border-white/10 shadow-lg'
+            : 'hover:bg-white/5 border border-transparent hover:border-white/5'
           }
         `}
         aria-label="Menu do usuário"
@@ -69,63 +69,65 @@ export function UserMenu() {
       >
         {/* Avatar */}
         <div className={`
-          w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarColor(user.nome)}
-          flex items-center justify-center text-white text-sm font-semibold
-          shadow-lg ring-2 ring-slate-700/50
+          w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarColor(user.nome)}
+          flex items-center justify-center text-white text-sm font-black
+          shadow-lg ring-2 ring-white/10 group-hover:ring-white/20 transition-all
         `}>
           {getInitials(user.nome)}
         </div>
 
         {/* Informações do usuário (desktop) */}
-        <div className="hidden sm:block text-left">
-          <p className="text-sm font-medium text-white leading-tight">
+        <div className="hidden sm:block text-left pr-1">
+          <p className="text-[13px] font-bold text-white leading-tight">
             {user.nome}
           </p>
-          <p className="text-xs text-slate-400 leading-tight">
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5 leading-tight">
             {user.role === 'ADMIN' ? 'Administrador' : user.role === 'TECNICO' ? 'Técnico' : 'Usuário'}
           </p>
         </div>
 
         {/* Ícone de chevron */}
-        <ChevronDown
-          className={`
-            w-4 h-4 text-slate-400 transition-transform duration-200
-            ${isOpen ? 'rotate-180' : ''}
-          `}
-        />
+        <div className={`p-1 rounded-lg transition-colors ${isOpen ? 'bg-purple-500/20 text-purple-400' : 'text-slate-500'}`}>
+          <ChevronDown
+            className={`
+              w-3.5 h-3.5 transition-transform duration-300
+              ${isOpen ? 'rotate-180' : ''}
+            `}
+          />
+        </div>
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fade-in-up"
+          className="absolute right-0 top-full mt-3 w-72 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 p-2"
           role="menu"
         >
           {/* Header do menu com informações do usuário */}
-          <div className="px-4 py-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-slate-900/50">
-            <div className="flex items-center gap-3">
+          <div className="px-4 py-6 border-b border-white/5 bg-white/5 rounded-[1.5rem] mb-2">
+            <div className="flex flex-col items-center text-center gap-3">
               <div className={`
-                w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarColor(user.nome)}
-                flex items-center justify-center text-white text-base font-semibold
-                shadow-lg ring-2 ring-primary-500/20
+                w-16 h-16 rounded-2xl bg-gradient-to-br ${getAvatarColor(user.nome)}
+                flex items-center justify-center text-white text-xl font-black
+                shadow-2xl ring-4 ring-white/10
               `}>
                 {getInitials(user.nome)}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">
+              <div className="min-w-0">
+                <p className="text-base font-bold text-white truncate px-2">
                   {user.nome}
                 </p>
-                <p className="text-xs text-slate-400 truncate">
+                <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
                   {user.email}
                 </p>
-                <div className="mt-1">
+                <div className="mt-4 flex justify-center">
                   <span className={`
-                    inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                    inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
                     ${user.role === 'ADMIN'
                       ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                       : user.role === 'TECNICO'
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      : 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                        : 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
                     }
                   `}>
                     {user.role === 'ADMIN' ? 'Administrador' : user.role === 'TECNICO' ? 'Técnico' : 'Usuário'}
@@ -136,33 +138,36 @@ export function UserMenu() {
           </div>
 
           {/* Itens do menu */}
-          <div className="py-2">
+          <div className="space-y-1">
             <button
               onClick={() => {
                 setIsOpen(false)
                 setIsProfileOpen(true)
               }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-all rounded-xl group"
               role="menuitem"
             >
-              <User className="w-4 h-4" />
-              <span>Meu Perfil</span>
+              <div className="p-1.5 bg-slate-800/50 rounded-lg group-hover:bg-purple-500/20 transition-colors">
+                <User className="w-4 h-4 group-hover:text-purple-400" />
+              </div>
+              <span className="font-semibold">Meu Perfil</span>
             </button>
 
             <button
               onClick={() => {
                 setIsOpen(false)
-                // TODO: Navegar para configurações quando implementado
               }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-all rounded-xl group"
               role="menuitem"
             >
-              <Settings className="w-4 h-4" />
-              <span>Configurações</span>
+              <div className="p-1.5 bg-slate-800/50 rounded-lg group-hover:bg-amber-500/20 transition-colors">
+                <Settings className="w-4 h-4 group-hover:text-amber-400" />
+              </div>
+              <span className="font-semibold">Configurações</span>
             </button>
 
             {/* Divisor */}
-            <div className="my-2 border-t border-slate-700/50" />
+            <div className="my-2 border-t border-white/5 mx-2" />
 
             {/* Botão de sair */}
             <button
@@ -170,11 +175,13 @@ export function UserMenu() {
                 setIsOpen(false)
                 logout()
               }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-all rounded-xl group"
               role="menuitem"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Sair</span>
+              <div className="p-1.5 bg-red-500/5 rounded-lg group-hover:bg-red-500/20 transition-colors">
+                <LogOut className="w-4 h-4" />
+              </div>
+              <span className="font-bold">Sair do Sistema</span>
             </button>
           </div>
         </div>

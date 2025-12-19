@@ -63,7 +63,7 @@ export function ListaUsuarios() {
             header: 'Nome',
             cell: (info) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-primary-400 font-bold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-purple-400 font-bold text-xs">
                         {info.row.original.nome.substring(0, 2).toUpperCase()}
                     </div>
                     {info.getValue() as string}
@@ -82,7 +82,7 @@ export function ListaUsuarios() {
                 <span className={`px-2 py-0.5 rounded text-xs font-medium border ${info.getValue() === 'ADMIN'
                     ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                     : info.getValue() === 'TECNICO'
-                        ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                        ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                         : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
                     }`}>
                     {ROLE_LABELS[info.getValue() as keyof typeof ROLE_LABELS]}
@@ -144,7 +144,7 @@ export function ListaUsuarios() {
                 <div className="p-6">
                     <div className="flex items-center justify-center h-64">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
                             <p className="text-slate-400">Carregando usuários...</p>
                         </div>
                     </div>
@@ -160,14 +160,14 @@ export function ListaUsuarios() {
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                            <User className="w-6 h-6 text-primary-400" />
+                            <User className="w-6 h-6 text-purple-400" />
                             Usuários
                         </h1>
                         <p className="text-slate-400 mt-1">Gerencie os usuários da sua empresa</p>
                     </div>
                     <Button
                         onClick={() => navigate('/usuarios/novo')}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors border-0"
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors border-0"
                     >
                         <Plus className="w-4 h-4" />
                         Novo Usuário
@@ -182,7 +182,7 @@ export function ListaUsuarios() {
                         placeholder="Buscar usuários por nome ou email..."
                         value={busca}
                         onChange={(e) => setBusca(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-slate-800/50 text-white rounded-lg border border-slate-700/50 focus:border-primary-500 focus:outline-none transition-colors"
+                        className="w-full pl-11 pr-4 py-3 bg-slate-800/50 text-white rounded-lg border border-slate-700/50 focus:border-purple-500 focus:outline-none transition-colors"
                     />
                 </div>
 
@@ -195,7 +195,7 @@ export function ListaUsuarios() {
                         {!busca && (
                             <Button
                                 onClick={() => navigate('/usuarios/novo')}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors border-0"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors border-0"
                             >
                                 <Plus className="w-4 h-4" />
                                 Criar Primeiro Usuário

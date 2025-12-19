@@ -67,32 +67,32 @@ function RelatorioItem({ relatorio, nivel, isSelected, onSelect, isAdmin }: Rela
   return (
     <div
       className={`
-        flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all group
+        flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-all group/item
         ${isSelected
-          ? 'bg-primary-600/30 border border-primary-400/50'
-          : 'hover:bg-slate-700/50'
+          ? 'bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+          : 'hover:bg-white/5 border border-transparent hover:border-white/5'
         }
       `}
-      style={{ paddingLeft: `${28 + nivel * 16}px` }}
+      style={{ paddingLeft: `${24 + nivel * 12}px` }}
       onClick={() => onSelect(relatorio.id)}
     >
-      <FileText className={`w-4 h-4 ${isSelected ? 'text-primary-400' : 'text-slate-400'}`} />
+      <FileText className={`w-3.5 h-3.5 transition-colors ${isSelected ? 'text-blue-400' : 'text-slate-500 group-hover/item:text-slate-300'}`} />
 
-      <span className={`flex-1 text-sm truncate ${isSelected ? 'text-white font-medium' : 'text-slate-300'}`}>
+      <span className={`flex-1 text-[13px] truncate transition-colors ${isSelected ? 'text-white font-medium' : 'text-slate-400 group-hover/item:text-slate-200'}`}>
         {relatorio.nome}
       </span>
 
-      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all">
+      <div className="flex items-center opacity-0 group-hover/item:opacity-100 transition-all scale-90 origin-right">
         {isAdmin && (
           <button
             onClick={(e) => {
               e.stopPropagation()
               navigate(`/relatorios/${relatorio.id}/editar`)
             }}
-            className="p-1 hover:bg-slate-600 rounded mr-1"
-            title="Editar relatório"
+            className="p-1.5 hover:bg-slate-700/50 rounded-lg mr-1 text-slate-500 hover:text-white transition-colors"
+            title="Editar"
           >
-            <Edit className="w-3 h-3 text-slate-400 hover:text-white" />
+            <Edit className="w-3 h-3" />
           </button>
         )}
         <button
@@ -100,10 +100,10 @@ function RelatorioItem({ relatorio, nivel, isSelected, onSelect, isAdmin }: Rela
             e.stopPropagation()
             onSelect(relatorio.id)
           }}
-          className="p-1 hover:bg-primary-600 rounded"
-          title="Executar relatório"
+          className="p-1.5 bg-purple-500/20 hover:bg-purple-500/40 rounded-lg text-purple-400 hover:text-purple-300 transition-colors"
+          title="Executar"
         >
-          <Play className="w-3 h-3 text-primary-400" />
+          <Play className="w-3 h-3 fill-current" />
         </button>
       </div>
     </div>
@@ -132,152 +132,136 @@ function FolderItem({
   const hasChildren = hasSubpastas || hasRelatorios
 
   return (
-    <div className="relative group">
+    <div className="relative group/folder">
       <div
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all
+          flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all border
           ${isSelected
-            ? 'bg-slate-700/50 border border-slate-600'
-            : 'hover:bg-slate-700/30'
+            ? 'bg-white/10 border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
+            : 'hover:bg-white/5 border-transparent hover:border-white/5'
           }
         `}
-        style={{ paddingLeft: `${12 + nivel * 16}px` }}
+        style={{ paddingLeft: `${8 + nivel * 12}px` }}
         onClick={() => onSelectPasta(pasta.id)}
-        onContextMenu={(e) => {
-          e.preventDefault()
-          setShowMenu(!showMenu)
-        }}
       >
-        {/* Chevron para expandir/colapsar */}
-        {hasChildren ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleExpand(pasta.id)
-            }}
-            className="p-0.5 hover:bg-slate-600 rounded"
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-slate-400" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-slate-400" />
-            )}
-          </button>
-        ) : (
-          <span className="w-5" />
-        )}
+        {/* Chevron */}
+        <div className="w-5 flex items-center justify-center">
+          {hasChildren && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleExpand(pasta.id)
+              }}
+              className="p-1 hover:bg-white/10 rounded-md transition-colors"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover/folder:text-slate-300" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover/folder:text-slate-300" />
+              )}
+            </button>
+          )}
+        </div>
 
-        {/* Ícone da pasta */}
-        {isExpanded ? (
-          <FolderOpen className="w-4 h-4 text-primary-400" />
-        ) : (
-          <Folder className="w-4 h-4 text-slate-400" />
-        )}
+        {/* Pasta Icon */}
+        <div className={`p-1 rounded-lg transition-colors ${isSelected ? 'text-purple-400' : 'text-slate-500 group-hover/folder:text-slate-300'}`}>
+          {isExpanded ? (
+            <FolderOpen className="w-4 h-4 fill-current opacity-20 absolute" />
+          ) : (
+            <Folder className="w-4 h-4 fill-current opacity-20 absolute" />
+          )}
+          {isExpanded ? (
+            <FolderOpen className="w-4 h-4" />
+          ) : (
+            <Folder className="w-4 h-4" />
+          )}
+        </div>
 
-        {/* Nome da pasta */}
-        <span className={`flex-1 text-sm truncate ${isSelected ? 'text-white font-medium' : 'text-slate-300'}`}>
+        {/* Nome */}
+        <span className={`flex-1 text-[13.5px] truncate transition-colors ${isSelected ? 'text-white font-semibold' : 'text-slate-400 group-hover/folder:text-slate-200'}`}>
           {pasta.nome}
         </span>
 
-        {/* Contador de relatórios */}
+        {/* Contador */}
         {pasta.qtd_relatorios > 0 && (
-          <span className="text-xs text-slate-500 bg-slate-700/50 px-2 py-0.5 rounded">
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-800/50 px-2 py-0.5 rounded-full border border-white/5">
             {pasta.qtd_relatorios}
           </span>
         )}
 
-        {/* Botão de menu (aparece no hover) */}
+        {/* Menu Toggle */}
         <button
           onClick={(e) => {
             e.stopPropagation()
             setShowMenu(!showMenu)
           }}
-          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-600 rounded transition-opacity"
+          className="opacity-0 group-hover/folder:opacity-100 p-1.5 hover:bg-white/10 rounded-lg transition-all"
         >
-          <MoreVertical className="w-4 h-4 text-slate-400" />
+          <MoreVertical className="w-3.5 h-3.5 text-slate-500 hover:text-white" />
         </button>
       </div>
 
-      {/* Menu dropdown */}
+      {/* Dropdown Menu */}
       {showMenu && (
-        <div className="absolute right-2 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50 min-w-[180px]">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu(false)
-              onCriarSubpasta(pasta.id)
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 text-slate-300 text-sm transition-colors rounded-t-lg"
-          >
-            <FolderPlus className="w-4 h-4" />
-            <span>Nova Subpasta</span>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu(false)
-              onEditar(pasta)
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 text-slate-300 text-sm transition-colors"
-          >
-            <Edit className="w-4 h-4" />
-            <span>Editar</span>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu(false)
-              onExcluir(pasta)
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 text-red-400 text-sm transition-colors rounded-b-lg"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Excluir</span>
-          </button>
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-2 top-full mt-1 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 min-w-[200px] p-1 animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onCriarSubpasta(pasta.id) }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
+            >
+              <FolderPlus className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
+              <span>Nova Subpasta</span>
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onEditar(pasta) }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
+            >
+              <Edit className="w-4 h-4 text-slate-500 group-hover:text-amber-400" />
+              <span>Editar Pasta</span>
+            </button>
+            <div className="h-px bg-white/5 my-1" />
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onExcluir(pasta) }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-red-500/10 text-red-400 text-sm transition-colors rounded-lg group"
+            >
+              <Trash2 className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+              <span>Excluir Pasta</span>
+            </button>
+          </div>
+        </>
       )}
 
-      {/* Conteúdo expandido: relatórios e subpastas */}
+      {/* Children Content */}
       {isExpanded && (
-        <div>
-          {/* Relatórios da pasta */}
-          {hasRelatorios && (
-            <div className="mt-1">
-              {pasta.relatorios!.map((relatorio) => (
-                <RelatorioItem
-                  key={relatorio.id}
-                  relatorio={relatorio}
-                  nivel={nivel + 1}
-                  isSelected={relatorioSelecionado === relatorio.id}
-                  onSelect={onSelectRelatorio}
-                  isAdmin={isAdmin}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Subpastas */}
-          {hasSubpastas && (
-            <div className="mt-1">
-              {pasta.subpastas!.map((subpasta) => (
-                <FolderItem
-                  key={subpasta.id}
-                  pasta={subpasta}
-                  nivel={nivel + 1}
-                  pastaSelecionada={pastaSelecionada}
-                  relatorioSelecionado={relatorioSelecionado}
-                  onSelectPasta={onSelectPasta}
-                  onSelectRelatorio={onSelectRelatorio}
-                  expandedFolders={expandedFolders}
-                  onToggleExpand={onToggleExpand}
-                  onCriarSubpasta={onCriarSubpasta}
-                  onEditar={onEditar}
-                  onExcluir={onExcluir}
-                  isAdmin={isAdmin}
-                />
-              ))}
-            </div>
-          )}
+        <div className="mt-1 space-y-0.5 animate-in slide-in-from-top-1 duration-200">
+          {hasRelatorios && pasta.relatorios!.map((rel) => (
+            <RelatorioItem
+              key={rel.id}
+              relatorio={rel}
+              nivel={nivel + 1}
+              isSelected={relatorioSelecionado === rel.id}
+              onSelect={onSelectRelatorio}
+              isAdmin={isAdmin}
+            />
+          ))}
+          {hasSubpastas && pasta.subpastas!.map((sub) => (
+            <FolderItem
+              key={sub.id}
+              pasta={sub}
+              nivel={nivel + 1}
+              pastaSelecionada={pastaSelecionada}
+              relatorioSelecionado={relatorioSelecionado}
+              onSelectPasta={onSelectPasta}
+              onSelectRelatorio={onSelectRelatorio}
+              expandedFolders={expandedFolders}
+              onToggleExpand={onToggleExpand}
+              onCriarSubpasta={onCriarSubpasta}
+              onEditar={onEditar}
+              onExcluir={onExcluir}
+              isAdmin={isAdmin}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -315,95 +299,101 @@ export function FolderTree({
   const pastasRaiz = pastas.filter(p => !p.pasta_pai)
 
   return (
-    <div className="w-72 h-full bg-slate-800/50 backdrop-blur-sm border-r border-slate-700/50 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-700/50">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Navegação</h3>
+    <div className="w-full h-full flex flex-col premium-scrollbar">
+      {/* Action Area */}
+      <div className="p-6 pb-2">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Navegação</h3>
           <button
             onClick={() => onCriarPasta(null)}
-            className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors"
+            className="p-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-all border border-purple-500/20 group"
             title="Nova pasta"
           >
-            <Plus className="w-4 h-4 text-slate-400" />
+            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
           </button>
         </div>
-      </div>
 
-      {/* Scroll area */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
         {/* Seções Especiais */}
-        <div className="p-2 border-b border-slate-700/50">
+        <div className="space-y-2">
           <button
             onClick={onSelectFavoritos}
             className={`
-              w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group
               ${viewAtual === 'favoritos'
-                ? 'bg-yellow-500/20 border border-yellow-500/30'
-                : 'hover:bg-slate-700/50'
+                ? 'bg-yellow-500/15 border border-yellow-500/30 text-yellow-500'
+                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5'
               }
             `}
           >
-            <Star className={`w-4 h-4 ${viewAtual === 'favoritos' ? 'text-yellow-400' : 'text-slate-400'}`} />
-            <span className={`text-sm ${viewAtual === 'favoritos' ? 'text-yellow-400 font-medium' : 'text-slate-300'}`}>
-              Favoritos
-            </span>
+            <div className={`p-1.5 rounded-lg transition-all ${viewAtual === 'favoritos' ? 'bg-yellow-500/20' : 'bg-slate-800/40 group-hover:bg-slate-700/60'}`}>
+              <Star className={`w-4 h-4 ${viewAtual === 'favoritos' ? 'fill-yellow-500' : 'text-slate-400'}`} />
+            </div>
+            <span className="text-sm font-medium">Favoritos</span>
+            {viewAtual === 'favoritos' && (
+              <div className="ml-auto w-1.5 h-1.5 bg-yellow-500 rounded-full shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
+            )}
           </button>
 
           <button
             onClick={onSelectRecentes}
             className={`
-              w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all mt-1
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group
               ${viewAtual === 'recentes'
-                ? 'bg-blue-500/20 border border-blue-500/30'
-                : 'hover:bg-slate-700/50'
+                ? 'bg-purple-500/15 border border-purple-500/30 text-purple-400'
+                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5'
               }
             `}
           >
-            <Clock className={`w-4 h-4 ${viewAtual === 'recentes' ? 'text-blue-400' : 'text-slate-400'}`} />
-            <span className={`text-sm ${viewAtual === 'recentes' ? 'text-blue-400 font-medium' : 'text-slate-300'}`}>
-              Recentes
-            </span>
+            <div className={`p-1.5 rounded-lg transition-all ${viewAtual === 'recentes' ? 'bg-purple-500/20' : 'bg-slate-800/40 group-hover:bg-slate-700/60'}`}>
+              <Clock className={`w-4 h-4 ${viewAtual === 'recentes' ? 'text-purple-400' : 'text-slate-400'}`} />
+            </div>
+            <span className="text-sm font-medium">Recentes</span>
+            {viewAtual === 'recentes' && (
+              <div className="ml-auto w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
+            )}
           </button>
         </div>
+      </div>
 
-        {/* Árvore de Pastas e Relatórios */}
-        <div className="p-2">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
-            Pastas
-          </div>
-          {pastasRaiz.length === 0 ? (
-            <div className="text-center text-slate-500 text-sm py-8">
-              <p>Nenhuma pasta criada</p>
-              <button
-                onClick={() => onCriarPasta(null)}
-                className="mt-2 text-primary-400 hover:text-primary-300 text-xs"
-              >
-                Criar primeira pasta
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {pastasRaiz.map((pasta) => (
-                <FolderItem
-                  key={pasta.id}
-                  pasta={pasta}
-                  nivel={0}
-                  pastaSelecionada={pastaSelecionada}
-                  relatorioSelecionado={relatorioSelecionado}
-                  onSelectPasta={onSelectPasta}
-                  onSelectRelatorio={onSelectRelatorio}
-                  expandedFolders={expandedFolders}
-                  onToggleExpand={toggleExpand}
-                  onCriarSubpasta={(pastaId) => onCriarPasta(pastaId)}
-                  onEditar={onEditarPasta}
-                  onExcluir={onExcluirPasta}
-                  isAdmin={isAdmin}
-                />
-              ))}
-            </div>
-          )}
+      {/* Separator */}
+      <div className="mx-6 h-px bg-white/5 my-4" />
+
+      <div className="flex-1 overflow-y-auto premium-scrollbar px-3 pb-8">
+        <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-4 py-2 mb-2">
+          Estrutura de Pastas
         </div>
+        {pastasRaiz.length === 0 ? (
+          <div className="text-center p-8 bg-white/5 rounded-2xl border border-white/5 mx-3">
+            <Folder className="w-8 h-8 text-slate-600 mx-auto mb-3 opacity-20" />
+            <p className="text-slate-500 text-xs">Nenhuma pasta criada</p>
+            <button
+              onClick={() => onCriarPasta(null)}
+              className="mt-3 text-purple-400 hover:text-purple-300 text-[11px] font-bold uppercase tracking-wider underline-offset-4 hover:underline"
+            >
+              Criar primeira
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {pastasRaiz.map((pasta) => (
+              <FolderItem
+                key={pasta.id}
+                pasta={pasta}
+                nivel={0}
+                pastaSelecionada={pastaSelecionada}
+                relatorioSelecionado={relatorioSelecionado}
+                onSelectPasta={onSelectPasta}
+                onSelectRelatorio={onSelectRelatorio}
+                expandedFolders={expandedFolders}
+                onToggleExpand={toggleExpand}
+                onCriarSubpasta={(pastaId) => onCriarPasta(pastaId)}
+                onEditar={onEditarPasta}
+                onExcluir={onExcluirPasta}
+                isAdmin={isAdmin}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

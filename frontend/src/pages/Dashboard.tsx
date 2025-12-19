@@ -64,7 +64,7 @@ export default function Dashboard() {
   const modalMover = useMoverRelatoriosModal()
 
   // Filtros avançados
-  const [filtroData, setFiltroData] = useState<'hoje' | 'semana' | 'mes' | 'todos'>('todos')
+  const [filtroData] = useState<'hoje' | 'semana' | 'mes' | 'todos'>('todos')
 
   // Refs
   const listaRef = useRef<HTMLDivElement>(null)
@@ -519,9 +519,8 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout>
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden">
-        {/* Sidebar - Árvore de Pastas com Relatórios */}
+    <AppLayout
+      sidebar={
         <FolderTree
           pastas={pastas}
           pastaSelecionada={pastaSelecionada}
@@ -536,204 +535,219 @@ export default function Dashboard() {
           onExcluirPasta={handleExcluirPasta}
           isAdmin={user?.role === 'ADMIN'}
         />
-
-        {/* Área Principal */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          {/* Se um relatório está selecionado, mostra o executor */}
-          {viewAtual === 'relatorio' && relatorioSelecionado ? (
-            <RelatorioExecutor
-              relatorioId={relatorioSelecionado}
-              onClose={handleFecharRelatorio}
-            />
-          ) : (
-            <>
-              {/* Header */}
-              <div className="p-6 border-b border-slate-700/50 bg-slate-800/30">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex-1">
-                    {viewAtual === 'pasta' && breadcrumbItems.length > 0 && (
+      }
+    >
+      <div className="h-full flex flex-col min-w-0">
+        {/* Se um relatório está selecionado, mostra o executor */}
+        {viewAtual === 'relatorio' && relatorioSelecionado ? (
+          <RelatorioExecutor
+            relatorioId={relatorioSelecionado}
+            onClose={handleFecharRelatorio}
+          />
+        ) : (
+          <div className="flex flex-col h-full">
+            {/* Header section with glass effect */}
+            <div className="pb-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                <div className="flex-1">
+                  {viewAtual === 'pasta' && breadcrumbItems.length > 0 && (
+                    <div className="mb-3 px-1">
                       <Breadcrumb items={breadcrumbItems} onNavigate={handleSelectPasta} />
-                    )}
-                    <h1 className="text-2xl font-bold text-white mt-2 flex items-center gap-2">
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-4">
                       {tituloSecao}
-                      <span className="text-sm font-normal text-slate-400">
-                        ({relatoriosFiltrados.length})
+                      <span className="text-xl font-medium text-slate-500 bg-white/5 px-3 py-1 rounded-2xl border border-white/5">
+                        {relatoriosFiltrados.length}
                       </span>
                     </h1>
                   </div>
-
-                  {/* Ações */}
-                  <div className="flex items-center gap-3">
-                    {/* Botão de criar novo relatório */}
-                    <button
-                      onClick={() => navigate('/relatorios/novo')}
-                      className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
-                    >
-                      <Plus className="w-5 h-5" />
-                      Novo Relatório
-                    </button>
-
-                    {/* Modo seleção */}
-                    {!modoSelecao ? (
-                      <button
-                        onClick={() => setModoSelecao(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                      >
-                        <Copy className="w-5 h-5" />
-                        Selecionar
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            setModoSelecao(false)
-                            setRelatoriosSelecionados(new Set())
-                          }}
-                          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={() => modalMover.abrir()}
-                          disabled={relatoriosSelecionados.size === 0}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                        >
-                          <FolderInput className="w-5 h-5" />
-                          Mover ({relatoriosSelecionados.size})
-                        </button>
-                        <button
-                          onClick={handleExcluirSelecionados}
-                          disabled={relatoriosSelecionados.size === 0}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                          Excluir ({relatoriosSelecionados.size})
-                        </button>
-                      </>
-                    )}
-                  </div>
+                  <p className="text-slate-400 mt-2 max-w-2xl font-medium">
+                    {viewAtual === 'todos' ? 'Gerencie e execute todos os seus relatórios em um só lugar.' :
+                      viewAtual === 'favoritos' ? 'Seus relatórios mais importantes marcados com estrela.' :
+                        'Explore o conteúdo desta pasta e execute seus relatórios.'}
+                  </p>
                 </div>
 
-                {/* Barra de ferramentas */}
+                {/* Ações */}
                 <div className="flex items-center gap-3">
-                  {/* Busca */}
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Buscar relatórios..."
-                      value={busca}
-                      onChange={(e) => setBusca(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors"
-                    />
-                  </div>
-
-                  {/* Ordenação */}
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortType)}
-                    className="px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
-                  >
-                    <option value="nome">Nome</option>
-                    <option value="data">Data de criação</option>
-                    <option value="execucoes">Últimas execuções</option>
-                  </select>
-
+                  {/* Botão de criar novo relatório */}
                   <button
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className="p-2 bg-slate-700/50 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors"
+                    onClick={() => navigate('/relatorios/novo')}
+                    className="group flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-2xl transition-all shadow-xl shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <SortAsc className={`w-5 h-5 text-white ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                    <div className="bg-white/20 p-1 rounded-lg group-hover:rotate-90 transition-transform duration-300">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    Novo Relatório
                   </button>
 
-                  {/* Layout */}
-                  <div className="flex items-center gap-1 bg-slate-700/50 border border-slate-600 rounded-lg p-1">
+                  {/* Modo seleção */}
+                  {!modoSelecao ? (
+                    <button
+                      onClick={() => setModoSelecao(true)}
+                      className="flex items-center gap-2 px-5 py-3 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-2xl transition-all border border-white/10"
+                    >
+                      <Copy className="w-4 h-4 text-slate-400" />
+                      Selecionar
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                      <button
+                        onClick={() => {
+                          setModoSelecao(false)
+                          setRelatoriosSelecionados(new Set())
+                        }}
+                        className="px-4 py-2 hover:bg-white/5 text-slate-400 hover:text-white rounded-xl transition-all text-sm font-medium"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => modalMover.abrir()}
+                        disabled={relatoriosSelecionados.size === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500 text-purple-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed rounded-xl transition-all text-sm font-bold"
+                      >
+                        <FolderInput className="w-4 h-4" />
+                        Mover ({relatoriosSelecionados.size})
+                      </button>
+                      <button
+                        onClick={handleExcluirSelecionados}
+                        disabled={relatoriosSelecionados.size === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed rounded-xl transition-all text-sm font-bold"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Excluir
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Toolbar Area */}
+              <div className="flex flex-col lg:flex-row items-center gap-4 bg-white/5 p-3 rounded-[2rem] border border-white/10 backdrop-blur-md">
+                {/* Busca */}
+                <div className="flex-1 relative group w-full">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-purple-400 transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Pesquisar relatórios..."
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-transparent text-white placeholder-slate-500 focus:outline-none transition-all font-medium"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full lg:w-auto">
+                  {/* Ordenação */}
+                  <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-3 border border-white/5">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter ml-1">Ordenar por:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortType)}
+                      className="bg-transparent py-2.5 text-sm font-semibold text-slate-300 focus:outline-none appearance-none cursor-pointer pr-2"
+                    >
+                      <option value="nome">Nome</option>
+                      <option value="data">Data</option>
+                      <option value="execucoes">Execuções</option>
+                    </select>
+                    <button
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                      className="p-1.5 hover:bg-white/5 rounded-lg transition-all text-slate-400 hover:text-purple-400"
+                    >
+                      <SortAsc className={`w-4 h-4 transition-transform duration-300 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* Layout Toggle */}
+                  <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/5">
                     <button
                       onClick={() => setLayoutType('list')}
-                      className={`p-2 rounded ${layoutType === 'list' ? 'bg-primary-600' : 'hover:bg-slate-600'}`}
+                      className={`p-2 rounded-xl transition-all ${layoutType === 'list' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
-                      <List className="w-5 h-5 text-white" />
+                      <List className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => setLayoutType('grid')}
-                      className={`p-2 rounded ${layoutType === 'grid' ? 'bg-primary-600' : 'hover:bg-slate-600'}`}
+                      className={`p-2 rounded-xl transition-all ${layoutType === 'grid' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
-                      <Grid className="w-5 h-5 text-white" />
+                      <Grid className="w-5 h-5" />
                     </button>
                   </div>
 
                   <button
                     onClick={handleExportar}
-                    className="flex items-center gap-2 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors text-white"
+                    className="p-3 bg-white/5 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 rounded-2xl transition-all border border-white/5"
+                    title="Exportar CSV"
                   >
                     <Download className="w-5 h-5" />
                   </button>
                 </div>
               </div>
+            </div>
 
-              {/* Lista de relatórios */}
-              <div ref={listaRef} className="flex-1 overflow-y-auto p-6">
-                {loadingRelatorios ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : relatoriosFiltrados.length === 0 ? (
-                  <EmptyState
-                    icon={FileText}
-                    title={busca ? 'Nenhum relatório encontrado' : 'Nenhum relatório aqui'}
-                    description={
-                      busca
-                        ? `Não encontramos relatórios que correspondam a "${busca}". Tente buscar com outros termos.`
-                        : viewAtual === 'favoritos'
-                          ? 'Você ainda não tem relatórios favoritos. Clique na estrela ⭐ para adicionar relatórios aos favoritos.'
-                          : viewAtual === 'recentes'
-                            ? 'Você ainda não executou nenhum relatório. Execute um relatório para vê-lo aqui.'
-                            : 'Esta pasta está vazia. Crie um novo relatório ou mova relatórios existentes para cá.'
-                    }
-                    action={
-                      viewAtual !== 'favoritos' && viewAtual !== 'recentes'
-                        ? {
-                            label: 'Criar Novo Relatório',
-                            onClick: () => navigate('/relatorios/novo')
-                          }
-                        : undefined
-                    }
-                  />
-                ) : (
-                  <>
-                    {modoSelecao && (
-                      <div className="mb-4 flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={relatoriosSelecionados.size === relatoriosFiltrados.length}
-                          onChange={handleSelecionarTodos}
-                          className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-600 focus:ring-primary-500"
-                        />
-                        <span className="text-sm text-slate-400">
-                          Selecionar todos ({relatoriosFiltrados.length})
-                        </span>
-                      </div>
-                    )}
-
-                    <div className={layoutType === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-2'}>
-                      {relatoriosFiltrados.map(relatorio => (
-                        <ReportListItem
-                          key={relatorio.id}
-                          relatorio={relatorio}
-                          isFavorito={favoritos.has(relatorio.id)}
-                          onToggleFavorito={handleToggleFavorito}
-                          isSelected={modoSelecao && relatoriosSelecionados.has(relatorio.id)}
-                          onToggleSelect={modoSelecao ? () => handleToggleSelecao(relatorio.id) : undefined}
-                          layoutType={layoutType}
-                        />
-                      ))}
+            {/* Lista de relatórios */}
+            <div ref={listaRef} className="flex-1 overflow-y-auto">
+              {loadingRelatorios ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : relatoriosFiltrados.length === 0 ? (
+                <EmptyState
+                  icon={FileText}
+                  title={busca ? 'Nenhum relatório encontrado' : 'Nenhum relatório aqui'}
+                  description={
+                    busca
+                      ? `Não encontramos relatórios que correspondam a "${busca}". Tente buscar com outros termos.`
+                      : viewAtual === 'favoritos'
+                        ? 'Você ainda não tem relatórios favoritos. Clique na estrela ⭐ para adicionar relatórios aos favoritos.'
+                        : viewAtual === 'recentes'
+                          ? 'Você ainda não executou nenhum relatório. Execute um relatório para vê-lo aqui.'
+                          : 'Esta pasta está vazia. Crie um novo relatório ou mova relatórios existentes para cá.'
+                  }
+                  action={
+                    viewAtual !== 'favoritos' && viewAtual !== 'recentes'
+                      ? {
+                        label: 'Criar Novo Relatório',
+                        onClick: () => navigate('/relatorios/novo')
+                      }
+                      : undefined
+                  }
+                />
+              ) : (
+                <div className="px-1">
+                  {modoSelecao && (
+                    <div className="mb-4 flex items-center gap-2 px-6">
+                      <input
+                        type="checkbox"
+                        checked={relatoriosSelecionados.size === relatoriosFiltrados.length}
+                        onChange={handleSelecionarTodos}
+                        className="w-4 h-4 rounded-md border-white/10 bg-white/5 text-purple-600 focus:ring-purple-500/50"
+                      />
+                      <span className="text-sm text-slate-500 font-bold uppercase tracking-wider">
+                        Selecionar todos ({relatoriosFiltrados.length})
+                      </span>
                     </div>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+                  )}
+
+                  <div className={layoutType === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6' : 'space-y-3 p-6'}>
+                    {relatoriosFiltrados.map(relatorio => (
+                      <ReportListItem
+                        key={relatorio.id}
+                        relatorio={relatorio}
+                        isFavorito={favoritos.has(relatorio.id)}
+                        onToggleFavorito={handleToggleFavorito}
+                        isSelected={modoSelecao && relatoriosSelecionados.has(relatorio.id)}
+                        onToggleSelect={modoSelecao ? () => handleToggleSelecao(relatorio.id) : undefined}
+                        layoutType={layoutType}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Pasta */}

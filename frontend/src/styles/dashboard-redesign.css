@@ -1,0 +1,139 @@
+/* Dashboard Redesign - Premium Visuals */
+
+:root {
+    --forge-glass-bg: rgba(15, 23, 42, 0.65);
+    --forge-glass-border: rgba(255, 255, 255, 0.08);
+    --forge-glass-border-hover: rgba(139, 92, 246, 0.3);
+    --forge-accent-glow: rgba(139, 92, 246, 0.15);
+}
+
+/* Glassmorphism base */
+.forge-glass {
+    background: var(--forge-glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--forge-glass-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.forge-glass-header {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--forge-glass-border);
+}
+
+.forge-glass-sidebar {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--forge-glass-border);
+}
+
+/* Background animated orbs (subtle) */
+.dashboard-bg {
+    position: fixed;
+    inset: 0;
+    background-color: #020617;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.dashboard-orb {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+    pointer-events: none;
+    animation: orb-float 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.orb-1 {
+    background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+    top: -100px;
+    left: -100px;
+}
+
+.orb-2 {
+    background: radial-gradient(circle, #d946ef 0%, transparent 70%);
+    bottom: -200px;
+    right: -100px;
+    animation-delay: -5s;
+}
+
+.orb-3 {
+    background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+    top: 40%;
+    right: 10%;
+    opacity: 0.1;
+    width: 400px;
+    height: 400px;
+    animation-duration: 25s;
+}
+
+@keyframes orb-float {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate(40px, 60px) scale(1.1);
+    }
+
+    100% {
+        transform: translate(-20px, 40px) scale(0.9);
+    }
+}
+
+/* Premium Hover Transitions */
+.premium-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-hover:hover {
+    border-color: var(--forge-glass-border-hover);
+    box-shadow: 0 0 20px var(--forge-accent-glow);
+    transform: translateY(-2px);
+}
+
+/* Custom Scrollbar for premium feel */
+.premium-scrollbar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+/* NavLink Enhancement */
+.nav-link-glow {
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link-glow::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+}
+
+.nav-link-glow:hover::after {
+    transform: translateX(100%);
+}

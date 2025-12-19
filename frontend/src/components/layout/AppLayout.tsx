@@ -5,6 +5,7 @@ import { LayoutDashboard, Database, FileText, Clock, User, Menu, X } from 'lucid
 import { useState } from 'react'
 import { ForgeLogo } from './ForgeLogo'
 import { UserMenu } from './UserMenu'
+import '@/styles/dashboard-redesign.css'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -23,17 +24,19 @@ function NavLink({ to, icon, label, isActive }: NavLinkProps) {
     <Link
       to={to}
       className={`
-        flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-200 relative
+        flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 relative group
         ${isActive
-          ? 'text-white bg-gradient-to-r from-primary-500/20 to-primary-600/10 border border-primary-500/30'
-          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          ? 'text-white bg-purple-500/15 border border-purple-500/30 shadow-[0_0_15px_rgba(139,92,246,0.1)]'
+          : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'
         }
       `}
     >
-      <span className={isActive ? 'text-primary-400' : ''}>{icon}</span>
+      <span className={`transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-purple-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+        {icon}
+      </span>
       <span className="text-sm font-medium">{label}</span>
       {isActive && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-primary-400 to-primary-600 rounded-r-full" />
+        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-purple-500 rounded-full blur-[2px] shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
       )}
     </Link>
   )
@@ -52,25 +55,32 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-forge-bg">
+    <div className="min-h-screen relative overflow-hidden flex flex-col font-sans antialiased text-slate-200">
+      {/* Dynamic Background */}
+      <div className="dashboard-bg">
+        <div className="dashboard-orb orb-1"></div>
+        <div className="dashboard-orb orb-2"></div>
+        <div className="dashboard-orb orb-3"></div>
+      </div>
+
       {/* Header */}
-      <header className="h-16 border-b border-slate-700/50 bg-slate-900/95 backdrop-blur-xl sticky top-0 z-50 shadow-lg shadow-black/20">
-        <div className="h-full flex items-center justify-between px-4 lg:px-6 max-w-[1920px] mx-auto">
-          <div className="flex items-center gap-6 lg:gap-8 flex-1">
+      <header className="h-16 forge-glass-header sticky top-0 z-50 shadow-lg shadow-black/40">
+        <div className="h-full flex items-center justify-between px-4 lg:px-8 max-w-[2200px] mx-auto">
+          <div className="flex items-center gap-10 flex-1">
             {/* Logo */}
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="flex items-center gap-2 hover:opacity-90 transition-opacity"
             >
-              <ForgeLogo size={40} showText={true} />
+              <ForgeLogo size={42} showText={true} />
             </Link>
 
             {/* Desktop Navigation */}
             {user && (
-              <nav className="hidden md:flex items-center gap-1">
+              <nav className="hidden md:flex items-center gap-2">
                 <NavLink
                   to="/dashboard"
-                  icon={<LayoutDashboard className="w-4 h-4" />}
+                  icon={<LayoutDashboard className="w-[18px] h-[18px]" />}
                   label="Dashboard"
                   isActive={isActivePath('/dashboard')}
                 />
@@ -79,19 +89,19 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
                   <>
                     <NavLink
                       to="/conexoes"
-                      icon={<Database className="w-4 h-4" />}
+                      icon={<Database className="w-[18px] h-[18px]" />}
                       label="Conexões"
                       isActive={isActivePath('/conexoes')}
                     />
                     <NavLink
                       to="/relatorios"
-                      icon={<FileText className="w-4 h-4" />}
+                      icon={<FileText className="w-[18px] h-[18px]" />}
                       label="Relatórios"
                       isActive={isActivePath('/relatorios')}
                     />
                     <NavLink
                       to="/historico"
-                      icon={<Clock className="w-4 h-4" />}
+                      icon={<Clock className="w-[18px] h-[18px]" />}
                       label="Histórico"
                       isActive={isActivePath('/historico')}
                     />
@@ -101,7 +111,7 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
                 {user.role === 'ADMIN' && (
                   <NavLink
                     to="/usuarios"
-                    icon={<User className="w-4 h-4" />}
+                    icon={<User className="w-[18px] h-[18px]" />}
                     label="Usuários"
                     isActive={isActivePath('/usuarios')}
                   />
@@ -113,7 +123,7 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
             {user && (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-lg transition-all"
+                className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? (
@@ -126,12 +136,16 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
           </div>
 
           {/* User Menu */}
-          {user && <UserMenu />}
+          {user && (
+            <div className="flex items-center gap-4">
+              <UserMenu />
+            </div>
+          )}
         </div>
 
         {/* Mobile Navigation Menu */}
         {user && mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-700/50 bg-slate-900/95 backdrop-blur-xl">
+          <div className="md:hidden border-t border-white/5 bg-slate-900/95 backdrop-blur-2xl">
             <nav className="flex flex-col p-4 gap-2">
               <NavLink
                 to="/dashboard"
@@ -173,7 +187,7 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
               )}
 
               {/* Mobile user menu */}
-              <div className="mt-4 pt-4 border-t border-slate-700/50">
+              <div className="mt-4 pt-4 border-t border-white/5">
                 <UserMenu />
               </div>
             </nav>
@@ -181,17 +195,19 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
         )}
       </header>
 
-      <div className="flex overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Sidebar (opcional) */}
         {sidebar && (
-          <aside className="w-64 min-h-[calc(100vh-4rem)] border-r border-slate-700/50 p-4 bg-slate-900/30">
+          <aside className="w-72 flex-shrink-0 forge-glass-sidebar hidden lg:block overflow-y-auto premium-scrollbar">
             {sidebar}
           </aside>
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-hidden">
-          {children}
+        <main className="flex-1 overflow-y-auto relative premium-scrollbar">
+          <div className="p-6 h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>
