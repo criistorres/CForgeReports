@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgeCard, ForgeButton, ForgeInput, ForgeLabel } from '@/components/forge';
+import { ForgeLogo } from '@/components/layout/ForgeLogo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -29,10 +30,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-forge-bg">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">ForgeReports</h1>
-          <p className="text-slate-400">Portal de Relatórios SQL</p>
+      <div className="w-full max-w-md px-4">
+        <div className="text-center mb-10">
+          <div className="flex justify-center mb-4">
+            <ForgeLogo size={80} showText={true} />
+          </div>
+          <p className="text-slate-400 text-sm">Portal de Relatórios SQL</p>
         </div>
 
         <ForgeCard glowOnHover={false}>
