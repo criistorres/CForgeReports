@@ -53,7 +53,7 @@ def substituir_parametros(query: str, filtros: list, valores: dict) -> tuple[str
 
         # Formatar valor de acordo com o tipo
         try:
-            valor_formatado = formatar_valor(valor, filtro.tipo)
+            valor_formatado = formatar_valor(valor, filtro.tipo, getattr(filtro, 'formato_data', None))
         except ValueError as e:
             return '', f'Erro no filtro "{filtro.label}": {str(e)}'
 
@@ -63,13 +63,14 @@ def substituir_parametros(query: str, filtros: list, valores: dict) -> tuple[str
     return query_final, None
 
 
-def formatar_valor(valor, tipo: str) -> str:
+def formatar_valor(valor, tipo: str, formato_data: str = None) -> str:
     """
     Formata valor para uso seguro em SQL.
 
     Args:
         valor: Valor a ser formatado
         tipo: Tipo do filtro (DATA, TEXTO, NUMERO, LISTA)
+        formato_data: Formato customizado para datas
 
     Returns:
         String formatada para inserção na query SQL
@@ -81,19 +82,33 @@ def formatar_valor(valor, tipo: str) -> str:
         return 'NULL'
 
     if tipo == 'DATA':
+        fmt = formato_data if formato_data else '%Y-%m-%d'
+        
         # Aceita string ISO ou objeto date/datetime
         if isinstance(valor, datetime):
-            return f"'{valor.strftime('%Y-%m-%d')}'"
+            return f"'{valor.strftime(fmt)}'"
         elif isinstance(valor, date):
-            return f"'{valor.strftime('%Y-%m-%d')}'"
+            return f"'{valor.strftime(fmt)}'"
         else:
             # Validar formato de data
             try:
-                # Tenta parsear para validar
-                date_obj = datetime.strptime(str(valor), '%Y-%m-%d')
-                return f"'{date_obj.strftime('%Y-%m-%d')}'"
+                # Tenta parsear do formato ISO (que vem do frontend geralmente)
+                # ou do próprio formato customizado se vier como string já no formato
+                if '-' in str(valor):
+                    date_obj = datetime.strptime(str(valor), '%Y-%m-%d')
+                else:
+                    # Tenta parsear com o formato customizado se possível, 
+                    # mas geralmente o input do frontend é YYYY-MM-DD
+                    date_obj = datetime.strptime(str(valor), fmt)
+                
+                return f"'{date_obj.strftime(fmt)}'"
             except ValueError:
-                raise ValueError(f'Data inválida: {valor}. Use formato YYYY-MM-DD')
+                # Fallback: tenta parsear ISO de qualquer forma
+                try:
+                    date_obj = datetime.strptime(str(valor).split('T')[0], '%Y-%m-%d')
+                    return f"'{date_obj.strftime(fmt)}'"
+                except ValueError:
+                    raise ValueError(f'Data inválida: {valor}. Use formato YYYY-MM-DD ou {fmt}')
 
     elif tipo == 'TEXTO' or tipo == 'LISTA':
         # Escapar aspas simples para prevenir SQL injection

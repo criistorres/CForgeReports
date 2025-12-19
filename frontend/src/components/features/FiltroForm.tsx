@@ -12,6 +12,7 @@ export interface Filtro {
   obrigatorio: boolean
   valor_padrao?: string
   opcoes?: string[]
+  formato_data?: string
   ordem?: number
 }
 
@@ -31,7 +32,8 @@ function FiltroForm({ filtros, onChange }: FiltroFormProps) {
       tipo: 'TEXTO',
       obrigatorio: false,
       valor_padrao: '',
-      opcoes: []
+      opcoes: [],
+      formato_data: ''
     }
     onChange([...filtros, novoFiltro])
   }
@@ -108,11 +110,10 @@ function FiltroForm({ filtros, onChange }: FiltroFormProps) {
                   value={filtro.parametro}
                   onChange={e => updateFiltro(idx, 'parametro', e.target.value)}
                   placeholder="@parametro"
-                  className={`w-full bg-slate-600 p-2 rounded text-white text-sm ${
-                    (!filtro.parametro || filtro.parametro === '@')
-                      ? 'border-2 border-red-500'
-                      : 'border border-slate-600'
-                  }`}
+                  className={`w-full bg-slate-600 p-2 rounded text-white text-sm ${(!filtro.parametro || filtro.parametro === '@')
+                    ? 'border-2 border-red-500'
+                    : 'border border-slate-600'
+                    }`}
                 />
                 {(!filtro.parametro || filtro.parametro === '@') && (
                   <span className="text-red-400 text-xs">Obrigatório</span>
@@ -206,15 +207,47 @@ function FiltroForm({ filtros, onChange }: FiltroFormProps) {
               </div>
             )}
 
-            {/* Valor Padrão */}
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Valor Padrão (opcional)</label>
-              <input
-                value={filtro.valor_padrao || ''}
-                onChange={e => updateFiltro(idx, 'valor_padrao', e.target.value)}
-                placeholder="Valor padrão se não preenchido"
-                className="w-full bg-slate-600 p-2 rounded text-white text-sm"
-              />
+            {/* Valor Padrão e Formato Data */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Valor Padrão (opcional)</label>
+                <input
+                  value={filtro.valor_padrao || ''}
+                  onChange={e => updateFiltro(idx, 'valor_padrao', e.target.value)}
+                  placeholder="Valor padrão"
+                  className="w-full bg-slate-600 p-2 rounded text-white text-sm"
+                />
+              </div>
+
+              {filtro.tipo === 'DATA' && (
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Formato Data</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={DATE_FORMATS.some(f => f.value === filtro.formato_data) ? filtro.formato_data : (filtro.formato_data ? 'custom' : '%Y-%m-%d')}
+                      onChange={e => {
+                        const val = e.target.value
+                        updateFiltro(idx, 'formato_data', val === 'custom' ? '' : val)
+                      }}
+                      className="flex-1 bg-slate-600 p-2 rounded text-white text-sm"
+                    >
+                      {DATE_FORMATS.map(f => (
+                        <option key={f.value} value={f.value}>{f.label}</option>
+                      ))}
+                    </select>
+
+                    {(!DATE_FORMATS.some(f => f.value === filtro.formato_data) || filtro.formato_data === '') && (
+                      <input
+                        value={filtro.formato_data || ''}
+                        onChange={e => updateFiltro(idx, 'formato_data', e.target.value)}
+                        placeholder="Ex: %H:%M"
+                        className="w-32 bg-slate-600 p-2 rounded text-white text-sm border border-primary-500"
+                        title="Formato personalizado (padrão Python strftime)"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))
@@ -257,5 +290,14 @@ function FiltroForm({ filtros, onChange }: FiltroFormProps) {
     </div>
   )
 }
+
+const DATE_FORMATS = [
+  { label: 'Padrão (YYYY-MM-DD)', value: '%Y-%m-%d' },
+  { label: 'Compacto (YYYYMMDD)', value: '%Y%m%d' },
+  { label: 'Brasileiro (DD/MM/YYYY)', value: '%d/%m/%Y' },
+  { label: 'Ano/Mês (YYYY-MM)', value: '%Y-%m' },
+  { label: 'Mês/Ano (MM/YYYY)', value: '%m/%Y' },
+  { label: 'Personalizado...', value: 'custom' },
+]
 
 export default FiltroForm

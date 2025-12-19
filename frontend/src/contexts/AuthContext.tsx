@@ -23,8 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+    if (token && savedUser && savedUser !== 'undefined') {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (err) {
+        console.error('Erro ao carregar usuário do localStorage:', err);
+        localStorage.removeItem('user');
+        localStorage.removeItem('access_token');
+      }
     }
     setLoading(false);
   }, []);

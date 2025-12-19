@@ -59,7 +59,7 @@ class FiltroSerializer(serializers.ModelSerializer):
     """Serializer para filtros dinâmicos"""
     class Meta:
         model = Filtro
-        fields = ['id', 'parametro', 'label', 'tipo', 'obrigatorio', 'valor_padrao', 'opcoes', 'ordem']
+        fields = ['id', 'parametro', 'label', 'tipo', 'obrigatorio', 'valor_padrao', 'opcoes', 'formato_data', 'ordem']
         read_only_fields = ['id']
 
     def validate_parametro(self, value):

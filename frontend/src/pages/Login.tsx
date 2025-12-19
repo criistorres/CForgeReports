@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { ForgeCard, ForgeButton, ForgeInput, ForgeLabel } from '@/components/forge';
 import { ForgeLogo } from '@/components/layout/ForgeLogo';
 import { getAuthErrorMessage } from '@/utils/errorMessages';
+import '@/styles/auth-redesign.css';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -30,64 +30,88 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-forge-bg">
-      <div className="w-full max-w-md px-4">
-        <div className="text-center mb-10">
-          <div className="flex justify-center mb-4">
-            <ForgeLogo size={80} showText={true} />
-          </div>
-          <p className="text-slate-400 text-sm">Portal de Relatórios SQL</p>
-        </div>
+    <div className="auth-container">
+      {/* Background Elements */}
+      <div className="auth-bg-gradient" />
+      <div className="auth-orb orb-1" />
+      <div className="auth-orb orb-2" />
 
-        <ForgeCard glowOnHover={false}>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="w-full max-w-md px-4 animate-slide-up">
+        <div className="auth-glass-card rounded-2xl p-8 md:p-10">
+          <div className="auth-header">
+            <div className="flex justify-center mb-6">
+              <ForgeLogo size={70} showText={false} />
+            </div>
+            <h1 className="auth-title">ForgeReports</h1>
+            <p className="auth-subtitle">Welcome back! Please enter your details.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="notification error p-3 rounded-lg">
-                <p className="text-error text-sm">{error}</p>
+              <div className="bg-red-500/10 border border-red-500/50 p-3 rounded-lg animate-shake">
+                <p className="text-red-400 text-sm text-center font-medium">{error}</p>
               </div>
             )}
 
-            <div>
-              <ForgeLabel htmlFor="email">Email</ForgeLabel>
-              <ForgeInput
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-              />
+            <div className="auth-input-group">
+              <label htmlFor="email">Email Address</label>
+              <div className="auth-input-container">
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
             </div>
 
-            <div>
-              <ForgeLabel htmlFor="password">Senha</ForgeLabel>
-              <ForgeInput
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+            <div className="auth-input-group">
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
+                <Link to="#" className="text-xs text-primary-400 hover:text-primary-300 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="auth-input-container">
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
 
-            <ForgeButton
+            <button
               type="submit"
               disabled={loading}
-              className="w-full"
-              glow
+              className="auth-button mt-4"
             >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </ForgeButton>
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : 'Sign in to account'}
+            </button>
 
-            <div className="text-center text-slate-400 text-sm pt-4 border-t border-primary-200">
-              Não tem uma conta?{' '}
-              <Link to="/cadastro" className="text-primary-500 hover:text-primary-400 transition-colors">
-                Criar nova empresa
-              </Link>
+            <div className="auth-divider">
+              <span>new here?</span>
+            </div>
+
+            <div className="auth-footer-link" style={{ marginTop: 0 }}>
+              Don't have an account?{' '}
+              <Link to="/cadastro">Create organization</Link>
             </div>
           </form>
-        </ForgeCard>
+        </div>
+
+        <p className="text-center text-slate-500 text-xs mt-8">
+          &copy; 2025 ForgeReports. All rights reserved.
+        </p>
       </div>
     </div>
   );

@@ -32,7 +32,20 @@ class RegistroPublicoView(views.APIView):
             # Criar empresa + admin
             usuario = serializer.save()
 
+            # Gerar tokens para auto-login
+            refresh = CustomTokenObtainPairSerializer.get_token(usuario)
+
             return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'id': str(usuario.id),
+                    'nome': usuario.nome,
+                    'email': usuario.email,
+                    'role': usuario.role,
+                    'empresa_id': str(usuario.empresa_id) if usuario.empresa_id else None,
+                    'empresa_nome': usuario.empresa.nome if usuario.empresa else None,
+                },
                 'detail': 'Empresa e usuário criados com sucesso!'
             }, status=status.HTTP_201_CREATED)
 

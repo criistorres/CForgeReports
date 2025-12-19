@@ -63,6 +63,7 @@ class Filtro(models.Model):
     obrigatorio = models.BooleanField(default=False)
     valor_padrao = models.CharField(max_length=255, blank=True)
     opcoes = models.JSONField(null=True, blank=True, help_text='Lista de opções para tipo LISTA')
+    formato_data = models.CharField(max_length=100, blank=True, help_text='Formato de conversão da data (ex: %Y%m%d)')
     ordem = models.IntegerField(default=0)
 
     class Meta:
