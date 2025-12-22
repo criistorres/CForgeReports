@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { LayoutDashboard, Database, FileText, Clock, User, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Database, FileText, Clock, User, Menu, X, CalendarClock } from 'lucide-react'
 import { useState } from 'react'
 import { ForgeLogo } from './ForgeLogo'
 import { UserMenu } from './UserMenu'
@@ -100,6 +100,12 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
                       isActive={isActivePath('/relatorios')}
                     />
                     <NavLink
+                      to="/agendamentos"
+                      icon={<CalendarClock className="w-[18px] h-[18px]" />}
+                      label="Agendamentos"
+                      isActive={isActivePath('/agendamentos')}
+                    />
+                    <NavLink
                       to="/historico"
                       icon={<Clock className="w-[18px] h-[18px]" />}
                       label="Histórico"
@@ -167,6 +173,12 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
                     icon={<FileText className="w-4 h-4" />}
                     label="Relatórios"
                     isActive={isActivePath('/relatorios')}
+                  />
+                  <NavLink
+                    to="/agendamentos"
+                    icon={<CalendarClock className="w-4 h-4" />}
+                    label="Agendamentos"
+                    isActive={isActivePath('/agendamentos')}
                   />
                   <NavLink
                     to="/historico"

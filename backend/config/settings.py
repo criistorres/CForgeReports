@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'apps.conexoes',
     'apps.relatorios',
     'apps.execucoes',
+    'apps.agendamentos',
 ]
 
 MIDDLEWARE = [
