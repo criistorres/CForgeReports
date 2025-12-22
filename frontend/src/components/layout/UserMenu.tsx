@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { LogOut, User, Settings, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { PerfilDrawer } from './PerfilDrawer'
@@ -6,6 +7,7 @@ import { ModalAlterarSenha } from '@/components/usuarios/ModalAlterarSenha'
 
 export function UserMenu() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
@@ -155,18 +157,22 @@ export function UserMenu() {
               <span className="font-semibold">Meu Perfil</span>
             </button>
 
-            <button
-              onClick={() => {
-                setIsOpen(false)
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-all rounded-xl group"
-              role="menuitem"
-            >
-              <div className="p-1.5 bg-slate-800/50 rounded-lg group-hover:bg-amber-500/20 transition-colors">
-                <Settings className="w-4 h-4 group-hover:text-amber-400" />
-              </div>
-              <span className="font-semibold">Configurações</span>
-            </button>
+            {/* Configurações - Apenas ADMIN */}
+            {user.role === 'ADMIN' && (
+              <button
+                onClick={() => {
+                  setIsOpen(false)
+                  navigate('/configuracoes')
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-all rounded-xl group"
+                role="menuitem"
+              >
+                <div className="p-1.5 bg-slate-800/50 rounded-lg group-hover:bg-amber-500/20 transition-colors">
+                  <Settings className="w-4 h-4 group-hover:text-amber-400" />
+                </div>
+                <span className="font-semibold">Configurações</span>
+              </button>
+            )}
 
             {/* Divisor */}
             <div className="my-2 border-t border-white/5 mx-2" />

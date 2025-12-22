@@ -14,6 +14,7 @@ import Historico from './pages/Historico';
 import { ListaUsuarios } from './pages/Usuarios/ListaUsuarios';
 import { ModalCriarUsuario } from './components/usuarios/ModalCriarUsuario';
 import { DetalheUsuario } from './pages/Usuarios/DetalheUsuario';
+import Configuracoes from './pages/Configuracoes';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -114,6 +115,14 @@ function App() {
           element={
             <PrivateRoute>
               <DetalheUsuario />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/configuracoes"
+          element={
+            <PrivateRoute>
+              <Configuracoes />
             </PrivateRoute>
           }
         />
