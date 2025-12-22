@@ -20,6 +20,7 @@ interface ReportListItemProps {
     onToggleFavorito: (id: string, novoEstado: boolean) => void
     isSelected?: boolean
     onToggleSelect?: () => void
+    onExecute?: (id: string) => void
     layoutType?: 'list' | 'grid'
 }
 
@@ -29,13 +30,19 @@ export function ReportListItem({
     onToggleFavorito,
     isSelected,
     onToggleSelect,
+    onExecute,
     layoutType = 'list'
 }: ReportListItemProps) {
     const navigate = useNavigate()
     const [showMenu, setShowMenu] = useState(false)
 
-    const handleExecutar = () => {
-        navigate(`/relatorios/${relatorio.id}/executar`)
+    const handleExecutar = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (onExecute) {
+            onExecute(relatorio.id)
+        } else {
+            navigate(`/relatorios/${relatorio.id}/executar`)
+        }
     }
 
     const handleEditar = () => {

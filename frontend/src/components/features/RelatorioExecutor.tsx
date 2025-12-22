@@ -29,9 +29,10 @@ interface Relatorio {
 interface RelatorioExecutorProps {
   relatorioId: string
   onClose: () => void
+  autoExecute?: boolean
 }
 
-export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorProps) {
+export function RelatorioExecutor({ relatorioId, onClose, autoExecute }: RelatorioExecutorProps) {
   const { showToast } = useToast()
 
   const [relatorio, setRelatorio] = useState<Relatorio | null>(null)
@@ -129,11 +130,11 @@ export function RelatorioExecutor({ relatorioId, onClose }: RelatorioExecutorPro
       })
       setValores(valoresIniciais)
 
-      // Executar automaticamente APENAS se não houver nenhum filtro
+      // Executar automaticamente APENAS se não houver nenhum filtro OU se autoExecute for true
       const temFiltros = relatorioData.filtros && relatorioData.filtros.length > 0
 
-      // Executar automaticamente se não houver filtros
-      if (!temFiltros) {
+      // Executar automaticamente se não houver filtros OU se for solicitado via autoExecute
+      if (!temFiltros || autoExecute) {
         executarRelatorioInternal(valoresIniciais, relatorioData)
       }
 

@@ -28,7 +28,7 @@ interface FolderTreeProps {
   pastaSelecionada: string | null
   relatorioSelecionado: string | null
   onSelectPasta: (pastaId: string | null) => void
-  onSelectRelatorio: (relatorioId: string) => void
+  onSelectRelatorio: (relatorioId: string, shouldExecute?: boolean) => void
   onSelectFavoritos: () => void
   onSelectRecentes: () => void
   viewAtual: ViewType
@@ -47,7 +47,7 @@ interface FolderItemProps {
   pastaSelecionada: string | null
   relatorioSelecionado: string | null
   onSelectPasta: (pastaId: string) => void
-  onSelectRelatorio: (relatorioId: string) => void
+  onSelectRelatorio: (relatorioId: string, shouldExecute?: boolean) => void
   expandedFolders: Set<string>
   onToggleExpand: (pastaId: string) => void
   onCriarSubpasta: (pastaPai: string) => void
@@ -63,7 +63,7 @@ interface RelatorioItemProps {
   relatorio: RelatorioNode
   nivel: number
   isSelected: boolean
-  onSelect: (relatorioId: string) => void
+  onSelect: (relatorioId: string, shouldExecute?: boolean) => void
   onRemover: (relatorio: RelatorioNode) => void
   onGerenciarPermissoes: (relatorio: RelatorioNode) => void
   isAdmin?: boolean
@@ -83,7 +83,7 @@ function RelatorioItem({ relatorio, nivel, isSelected, onSelect, onRemover, onGe
         }
       `}
       style={{ paddingLeft: `${24 + nivel * 12}px` }}
-      onClick={() => onSelect(relatorio.id)}
+      onClick={() => onSelect(relatorio.id, false)}
     >
       <FileText className={`w-3.5 h-3.5 transition-colors ${isSelected ? 'text-purple-400' : 'text-slate-500 group-hover/item:text-slate-300'}`} />
 
@@ -110,7 +110,7 @@ function RelatorioItem({ relatorio, nivel, isSelected, onSelect, onRemover, onGe
           <div className="absolute right-2 top-full mt-1 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 min-w-[180px] p-1 animate-in fade-in zoom-in-95 duration-150">
             {/* Executar */}
             <button
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onSelect(relatorio.id) }}
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onSelect(relatorio.id, true) }}
               className="w-full flex items-center gap-3 px-3 py-2 hover:bg-purple-500/10 text-purple-400 text-sm transition-colors rounded-lg group"
             >
               <Play className="w-4 h-4 fill-current" />
@@ -374,13 +374,15 @@ export function FolderTree({
       <div className="p-6 pb-2">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Navegação</h3>
-          <button
-            onClick={() => onCriarPasta(null)}
-            className="p-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-all border border-purple-500/20 group"
-            title="Nova pasta"
-          >
-            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => onCriarPasta(null)}
+              className="p-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-all border border-purple-500/20 group"
+              title="Nova pasta"
+            >
+              <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+            </button>
+          )}
         </div>
 
         {/* Seções Especiais */}
@@ -436,12 +438,14 @@ export function FolderTree({
           <div className="text-center p-8 bg-white/5 rounded-2xl border border-white/5 mx-3">
             <Folder className="w-8 h-8 text-slate-600 mx-auto mb-3 opacity-20" />
             <p className="text-slate-500 text-xs">Nenhuma pasta criada</p>
-            <button
-              onClick={() => onCriarPasta(null)}
-              className="mt-3 text-purple-400 hover:text-purple-300 text-[11px] font-bold uppercase tracking-wider underline-offset-4 hover:underline"
-            >
-              Criar primeira
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => onCriarPasta(null)}
+                className="mt-3 text-purple-400 hover:text-purple-300 text-[11px] font-bold uppercase tracking-wider underline-offset-4 hover:underline"
+              >
+                Criar primeira
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-1">

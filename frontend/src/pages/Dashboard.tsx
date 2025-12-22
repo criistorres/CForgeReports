@@ -50,6 +50,7 @@ export default function Dashboard() {
   const [layoutType, setLayoutType] = useState<LayoutType>('list')
   const [sortBy, setSortBy] = useState<SortType>('nome')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+  const [autoExecute, setAutoExecute] = useState(false)
 
   // Seleção múltipla
   const [relatoriosSelecionados, setRelatoriosSelecionados] = useState<Set<string>>(new Set())
@@ -196,13 +197,15 @@ export default function Dashboard() {
     setViewAtual(pastaId ? 'pasta' : 'todos')
   }, [])
 
-  const handleSelectRelatorio = useCallback((relatorioId: string) => {
+  const handleSelectRelatorio = useCallback((relatorioId: string, shouldExecute: boolean = false) => {
     setRelatorioSelecionado(relatorioId)
+    setAutoExecute(shouldExecute)
     setViewAtual('relatorio')
   }, [])
 
   const handleFecharRelatorio = useCallback(() => {
     setRelatorioSelecionado(null)
+    setAutoExecute(false)
     setViewAtual(pastaSelecionada ? 'pasta' : 'todos')
   }, [pastaSelecionada])
 
@@ -608,6 +611,7 @@ export default function Dashboard() {
           <RelatorioExecutor
             relatorioId={relatorioSelecionado}
             onClose={handleFecharRelatorio}
+            autoExecute={autoExecute}
           />
         ) : (
           <div className="flex flex-col h-full">
@@ -804,6 +808,7 @@ export default function Dashboard() {
                         onToggleFavorito={handleToggleFavorito}
                         isSelected={modoSelecao && relatoriosSelecionados.has(relatorio.id)}
                         onToggleSelect={modoSelecao ? () => handleToggleSelecao(relatorio.id) : undefined}
+                        onExecute={(id) => handleSelectRelatorio(id, true)}
                         layoutType={layoutType}
                       />
                     ))}
