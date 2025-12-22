@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Grid, List, Download, SortAsc, Trash2, Copy, FolderInput, FileText } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { FolderTree, ReportListItem, Breadcrumb, PastaModal } from '@/components/features'
+import { FolderTree, ReportListItem, Breadcrumb, PastaModal, AdicionarRelatoriosModal, GerenciarPermissoesModal } from '@/components/features'
 import { RelatorioExecutor } from '@/components/features/RelatorioExecutor'
 import { MoverRelatoriosModal, useMoverRelatoriosModal } from '@/components/features/MoverRelatoriosModal'
-import type { PastaNode, ViewType } from '@/components/features/FolderTree'
+import type { PastaNode, ViewType, RelatorioNode } from '@/components/features/FolderTree'
 import type { Relatorio } from '@/components/features/ReportListItem'
 import api from '@/services/api'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -59,6 +59,12 @@ export default function Dashboard() {
   const [modalPastaAberto, setModalPastaAberto] = useState(false)
   const [pastaEditando, setPastaEditando] = useState<PastaNode | null>(null)
   const [pastaPaiNova, setPastaPaiNova] = useState<string | null>(null)
+  const [modalAdicionarRelatorioAberto, setModalAdicionarRelatorioAberto] = useState(false)
+  const [pastaAlvoAdicionar, setPastaAlvoAdicionar] = useState<PastaNode | null>(null)
+
+  // Gerenciamento de permissões
+  const [modalPermissoesAberto, setModalPermissoesAberto] = useState(false)
+  const [relatorioAlvoPermissoes, setRelatorioAlvoPermissoes] = useState<RelatorioNode | null>(null)
 
   // Modal mover relatórios
   const modalMover = useMoverRelatoriosModal()
@@ -278,11 +284,67 @@ export default function Dashboard() {
     }
   }
 
+  const handleRemoverRelatorio = async (relatorio: RelatorioNode) => {
+    const confirmed = await confirm({
+      title: 'Remover da Pasta',
+      description: `Deseja remover o relatório "${relatorio.nome}" desta pasta? Ele voltará para o nível principal.`,
+      confirmText: 'Remover',
+      cancelText: 'Cancelar',
+      variant: 'default'
+    })
+
+    if (!confirmed) return
+
+    try {
+      await api.patch(`/relatorios/${relatorio.id}/`, { pasta: null })
+
+      // Atualiza lista de relatórios localmente
+      setRelatorios(prev => prev.map(r =>
+        r.id === relatorio.id ? { ...r, pasta: null, pasta_id: null } : r
+      ))
+
+      // Atualiza árvore de pastas
+      const resRel = await api.get('/relatorios/')
+      const pastasRes = await api.get('/pastas/')
+      const pastasFlat = pastasRes.data as PastaNode[]
+      const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, resRel.data)
+      setPastas(pastasComRelatorios)
+
+      showToast('Relatório removido da pasta', 'success')
+    } catch (error: any) {
+      console.error('Erro ao remover relatório da pasta:', error)
+      const mensagem = getErrorMessage(error)
+      showToast(mensagem, 'error')
+    }
+  }
+
   const handleSucessoPasta = async () => {
     const pastasRes = await api.get('/pastas/')
     const pastasFlat = pastasRes.data as PastaNode[]
     const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, relatorios)
     setPastas(pastasComRelatorios)
+  }
+
+  const handleAbrirAdicionarRelatorio = (pasta: PastaNode) => {
+    setPastaAlvoAdicionar(pasta)
+    setModalAdicionarRelatorioAberto(true)
+  }
+
+  const handleSucessoAdicionarRelatorio = async () => {
+    // Recarrega relatórios
+    const resRel = await api.get('/relatorios/')
+    setRelatorios(resRel.data)
+
+    // Atualiza árvore de pastas
+    const pastasRes = await api.get('/pastas/')
+    const pastasFlat = pastasRes.data as PastaNode[]
+    const pastasComRelatorios = organizarPastasComRelatorios(pastasFlat, resRel.data)
+    setPastas(pastasComRelatorios)
+  }
+
+  const handleGerenciarPermissoes = (relatorio: RelatorioNode) => {
+    setRelatorioAlvoPermissoes(relatorio)
+    setModalPermissoesAberto(true)
   }
 
   // Seleção múltipla
@@ -344,7 +406,7 @@ export default function Dashboard() {
     try {
       await Promise.all(
         Array.from(relatoriosSelecionados).map(id =>
-          api.patch(`/relatorios/${id}/`, { pasta_id: pastaDestinoId })
+          api.patch(`/relatorios/${id}/`, { pasta: pastaDestinoId })
         )
       )
 
@@ -533,7 +595,10 @@ export default function Dashboard() {
           onCriarPasta={handleCriarPasta}
           onEditarPasta={handleEditarPasta}
           onExcluirPasta={handleExcluirPasta}
-          isAdmin={user?.role === 'ADMIN'}
+          onAdicionarRelatorio={handleAbrirAdicionarRelatorio}
+          onRemoverRelatorio={handleRemoverRelatorio}
+          onGerenciarPermissoes={handleGerenciarPermissoes}
+          isAdmin={user?.role === 'ADMIN' || user?.role === 'TECNICO'}
         />
       }
     >
@@ -767,6 +832,24 @@ export default function Dashboard() {
         pastas={pastas}
         pastaSelecionada={pastaSelecionada}
         quantidadeRelatorios={relatoriosSelecionados.size}
+      />
+
+      {/* Modal Adicionar Relatórios */}
+      {pastaAlvoAdicionar && (
+        <AdicionarRelatoriosModal
+          isOpen={modalAdicionarRelatorioAberto}
+          onClose={() => setModalAdicionarRelatorioAberto(false)}
+          onConfirm={handleSucessoAdicionarRelatorio}
+          pastaDestinoId={pastaAlvoAdicionar.id}
+          pastaNome={pastaAlvoAdicionar?.nome || ''}
+        />
+      )}
+
+      <GerenciarPermissoesModal
+        isOpen={modalPermissoesAberto}
+        onClose={() => setModalPermissoesAberto(false)}
+        relatorioId={relatorioAlvoPermissoes?.id || null}
+        relatorioNome={relatorioAlvoPermissoes?.nome || ''}
       />
 
       {ConfirmComponent}

@@ -11,7 +11,7 @@ export interface Relatorio {
     criado_em: string
     ultima_execucao?: string
     pasta?: string | null
-    pasta_id?: string
+    pasta_id?: string | null
 }
 
 interface ReportListItemProps {

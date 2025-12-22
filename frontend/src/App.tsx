@@ -3,6 +3,8 @@ import { useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './hooks/useToast';
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
+import LandingPage from './pages/LandingPage';
+import MobileMockup from './pages/MobileMockup';
 import Dashboard from './pages/Dashboard';
 import Conexoes from './pages/Conexoes';
 import Relatorios from './pages/Relatorios';
@@ -33,6 +35,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/mobile-mockup" element={<MobileMockup />} />
         <Route
           path="/dashboard"
           element={
@@ -113,7 +117,7 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </ToastProvider>
   );

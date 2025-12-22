@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   ChevronRight, ChevronDown, Folder, FolderOpen, Star, Clock,
-  Plus, MoreVertical, Edit, Trash2, FolderPlus, FileText, Play
+  Plus, MoreVertical, Edit, Trash2, FolderPlus, FileText, Play, XCircle, Shield
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -35,6 +35,9 @@ interface FolderTreeProps {
   onCriarPasta: (pastaPai?: string | null) => void
   onEditarPasta: (pasta: PastaNode) => void
   onExcluirPasta: (pasta: PastaNode) => void
+  onAdicionarRelatorio?: (pasta: PastaNode) => void
+  onRemoverRelatorio?: (relatorio: RelatorioNode) => void
+  onGerenciarPermissoes?: (relatorio: RelatorioNode) => void
   isAdmin?: boolean
 }
 
@@ -50,6 +53,9 @@ interface FolderItemProps {
   onCriarSubpasta: (pastaPai: string) => void
   onEditar: (pasta: PastaNode) => void
   onExcluir: (pasta: PastaNode) => void
+  onAdicionarRelatorio: (pasta: PastaNode) => void
+  onRemoverRelatorio: (relatorio: RelatorioNode) => void
+  onGerenciarPermissoes: (relatorio: RelatorioNode) => void
   isAdmin?: boolean
 }
 
@@ -58,16 +64,19 @@ interface RelatorioItemProps {
   nivel: number
   isSelected: boolean
   onSelect: (relatorioId: string) => void
+  onRemover: (relatorio: RelatorioNode) => void
+  onGerenciarPermissoes: (relatorio: RelatorioNode) => void
   isAdmin?: boolean
 }
 
-function RelatorioItem({ relatorio, nivel, isSelected, onSelect, isAdmin }: RelatorioItemProps) {
+function RelatorioItem({ relatorio, nivel, isSelected, onSelect, onRemover, onGerenciarPermissoes, isAdmin }: RelatorioItemProps) {
   const navigate = useNavigate()
+  const [showMenu, setShowMenu] = useState(false)
 
   return (
     <div
       className={`
-        flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-all group/item
+        relative flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-all group/item
         ${isSelected
           ? 'bg-purple-500/15 border border-purple-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]'
           : 'hover:bg-white/5 border border-transparent hover:border-white/5'
@@ -82,30 +91,69 @@ function RelatorioItem({ relatorio, nivel, isSelected, onSelect, isAdmin }: Rela
         {relatorio.nome}
       </span>
 
-      <div className="flex items-center opacity-0 group-hover/item:opacity-100 transition-all scale-90 origin-right">
-        {isAdmin && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              navigate(`/relatorios/${relatorio.id}/editar`)
-            }}
-            className="p-1.5 hover:bg-slate-700/50 rounded-lg mr-1 text-slate-500 hover:text-white transition-colors"
-            title="Editar"
-          >
-            <Edit className="w-3 h-3" />
-          </button>
-        )}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelect(relatorio.id)
-          }}
-          className="p-1.5 bg-purple-500/20 hover:bg-purple-500/40 rounded-lg text-purple-400 hover:text-purple-300 transition-colors"
-          title="Executar"
-        >
-          <Play className="w-3 h-3 fill-current" />
-        </button>
-      </div>
+      {/* Menu Toggle Button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          setShowMenu(!showMenu)
+        }}
+        className="opacity-0 group-hover/item:opacity-100 p-1.5 hover:bg-white/10 rounded-lg transition-all"
+        title="Ações"
+      >
+        <MoreVertical className="w-3.5 h-3.5 text-slate-500 hover:text-white" />
+      </button>
+
+      {/* Dropdown Menu */}
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false) }} />
+          <div className="absolute right-2 top-full mt-1 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 min-w-[180px] p-1 animate-in fade-in zoom-in-95 duration-150">
+            {/* Executar */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onSelect(relatorio.id) }}
+              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-purple-500/10 text-purple-400 text-sm transition-colors rounded-lg group"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Executar</span>
+            </button>
+
+            {isAdmin && (
+              <>
+                <div className="h-px bg-white/5 my-1" />
+
+                {/* Editar */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMenu(false); navigate(`/relatorios/${relatorio.id}/editar`) }}
+                  className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
+                >
+                  <Edit className="w-4 h-4 text-slate-500 group-hover:text-amber-400" />
+                  <span>Editar Relatório</span>
+                </button>
+
+                {/* Gerenciar Permissões */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMenu(false); onGerenciarPermissoes(relatorio) }}
+                  className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
+                >
+                  <Shield className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
+                  <span>Permissões</span>
+                </button>
+
+                <div className="h-px bg-white/5 my-1" />
+
+                {/* Remover da Pasta */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMenu(false); onRemover(relatorio) }}
+                  className="w-full flex items-center gap-3 px-3 py-2 hover:bg-amber-500/10 text-amber-400 text-sm transition-colors rounded-lg group"
+                >
+                  <XCircle className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                  <span>Remover da Pasta</span>
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -122,6 +170,9 @@ function FolderItem({
   onCriarSubpasta,
   onEditar,
   onExcluir,
+  onAdicionarRelatorio,
+  onRemoverRelatorio,
+  onGerenciarPermissoes,
   isAdmin
 }: FolderItemProps) {
   const [showMenu, setShowMenu] = useState(false)
@@ -206,28 +257,39 @@ function FolderItem({
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
           <div className="absolute right-2 top-full mt-1 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 min-w-[200px] p-1 animate-in fade-in zoom-in duration-200">
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onCriarSubpasta(pasta.id) }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
-            >
-              <FolderPlus className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
-              <span>Nova Subpasta</span>
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onEditar(pasta) }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
-            >
-              <Edit className="w-4 h-4 text-slate-500 group-hover:text-amber-400" />
-              <span>Editar Pasta</span>
-            </button>
-            <div className="h-px bg-white/5 my-1" />
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowMenu(false); onExcluir(pasta) }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-red-500/10 text-red-400 text-sm transition-colors rounded-lg group"
-            >
-              <Trash2 className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-              <span>Excluir Pasta</span>
-            </button>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMenu(false); onAdicionarRelatorio(pasta) }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
+                >
+                  <Plus className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
+                  <span>Adicionar Relatório</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMenu(false); onCriarSubpasta(pasta.id) }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
+                >
+                  <FolderPlus className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
+                  <span>Nova Subpasta</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMenu(false); onEditar(pasta) }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 text-slate-300 text-sm transition-colors rounded-lg group"
+                >
+                  <Edit className="w-4 h-4 text-slate-500 group-hover:text-amber-400" />
+                  <span>Editar Pasta</span>
+                </button>
+                <div className="h-px bg-white/5 my-1" />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMenu(false); onExcluir(pasta) }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-red-500/10 text-red-400 text-sm transition-colors rounded-lg group"
+                >
+                  <Trash2 className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                  <span>Excluir Pasta</span>
+                </button>
+              </>
+            )}
           </div>
         </>
       )}
@@ -242,6 +304,8 @@ function FolderItem({
               nivel={nivel + 1}
               isSelected={relatorioSelecionado === rel.id}
               onSelect={onSelectRelatorio}
+              onRemover={onRemoverRelatorio}
+              onGerenciarPermissoes={onGerenciarPermissoes}
               isAdmin={isAdmin}
             />
           ))}
@@ -259,6 +323,9 @@ function FolderItem({
               onCriarSubpasta={onCriarSubpasta}
               onEditar={onEditar}
               onExcluir={onExcluir}
+              onAdicionarRelatorio={onAdicionarRelatorio}
+              onRemoverRelatorio={onRemoverRelatorio}
+              onGerenciarPermissoes={onGerenciarPermissoes}
               isAdmin={isAdmin}
             />
           ))}
@@ -280,6 +347,9 @@ export function FolderTree({
   onCriarPasta,
   onEditarPasta,
   onExcluirPasta,
+  onAdicionarRelatorio,
+  onRemoverRelatorio,
+  onGerenciarPermissoes,
   isAdmin
 }: FolderTreeProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
@@ -389,6 +459,9 @@ export function FolderTree({
                 onCriarSubpasta={(pastaId) => onCriarPasta(pastaId)}
                 onEditar={onEditarPasta}
                 onExcluir={onExcluirPasta}
+                onAdicionarRelatorio={(p) => onAdicionarRelatorio?.(p)}
+                onRemoverRelatorio={(r) => onRemoverRelatorio?.(r)}
+                onGerenciarPermissoes={(r) => onGerenciarPermissoes?.(r)}
                 isAdmin={isAdmin}
               />
             ))}
